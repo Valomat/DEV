@@ -1,0 +1,155 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+		<title>json essai</title>
+		<link rel="stylesheet" href="style.css" title="style" type="text/css" media="screen" charset="utf-8">
+		<script type="text/javascript" src="js/jquery.js" ></script>
+		<script type="text/javascript" src="js/variables.js" ></script>
+		<script type="text/javascript" src="functions.js" ></script>
+		<script type="text/javascript" src="jsons.js" ></script>
+			</head>
+	<body onkeydown="keyDown(event)" onkeyup="keyUp(event)">
+		<div id = "container">
+			<canvas id="Canvas" class="map" width="600px" height='600px'>
+			</canvas>
+			<div class="results"></div>
+			<div class="interface">
+				<div class="trigger">
+					Créer une carte de monde...
+				</div>
+				<div class="info">
+					<table>
+						<tr>
+							<td>Coordonnées X</td><td class="sep">:</td><td class="cor_x results"></td>
+						</tr>
+						<tr>
+							<td>Coordonnées Y</td><td class="sep">:</td><td class="cor_y results"></td>
+						</tr>
+						<tr>
+							<td>ID de la case :</td><td class="sep">:</td><td class="id results"></td>
+						</tr>
+						<tr>
+							<td>Vitesse X</td><td class="sep">:</td><td class="v_x results"></td>
+						</tr>
+						<tr>
+							<td>Vitesse Y</td><td class="sep">:</td><td class="v_y results"></td>
+						</tr>
+						<tr>
+							<td>Position dans la case en X</td><td class="sep">:</td><td class="sm_x results"></td>
+						</tr>
+						<tr>
+							<td>Position dans la case en Y</td><td class="sep">:</td><td class="sm_y results"></td>
+						</tr>
+						<tr>
+							<td>Contenu</td><td class="sep">:</td><td class="content results"></td>
+						</tr>
+						<tr>
+							<td>Map X</td><td class="sep">:</td><td class="map_x results"></td>
+						</tr>
+					</table>
+				</div>
+			</div>
+		</div>
+		<script type="text/javascript">
+		
+			// initialise le Canvas
+		
+			var canvas = document.getElementById('Canvas');
+			var context = canvas.getContext('2d');
+			
+			// Charge les images de textures (code dégueulasse)
+			
+			var images = [];
+		    var imageObj = new Image();
+		    imageObj.src = "img/mur.png";
+		    images[0] = imageObj;
+		    imageObj = new Image();
+		    imageObj.src = "img/sol.png";
+		    images[1] = imageObj;
+		    
+		    // Variables utiles
+				
+			var	map_utilities = { // variables utiles lors de la création de la map
+					"id" : 0 ,
+					"x" : 0 ,
+					"y" : 0 ,
+					"random" : 0 ,
+					"limit_x" : 30 ,
+					"limit_y" : 30 ,
+				},
+				ref = {
+					"speed_x" : 0 ,
+					"spedd_y" : 0 ,
+					"x" : 0 , 
+					"y" : 0 ,
+				},
+				visual_map = {
+					"ratio" : 60 ,
+					"x" : 0 ,
+					"y" : 0 ,
+					"width" : 10 ,
+					"height" : 10 ,
+					"eq_x" : 0 ,
+					"eq_y" : 0 ,
+					"scroll_speed" : 1,
+				},		
+				virtual_map = [ ],
+				ligne = [ ],
+				index = [ ],
+				my_character = { 
+					"name" : "Isildur" , 
+					"x" : 1 , 
+					"y" : 1 ,
+					"current_speed_x" : 0 ,
+					"current_speed_y" : 0 ,
+					"max_speed" : 4 , 
+					"case_id" : "" , 
+					"next_case" : "" ,
+					"eq_x" : 1 ,
+					"eq_y" : 1 ,
+					"width" : 0.25 , 
+					"height" : 0.5 ,
+					"scroll_x" : 0 ,
+					"scroll_y" : 0 
+				},
+				ci,
+				current_case = {
+					"id" : 0 , 
+					"x" : 0 , 
+					"y" : 0 , 
+					"content" : "none" , 
+					"mat" : "none" , 
+					"abr" : "none" , 
+					"color" : "none" , 
+					"space" : "none" ,
+				},
+				next_case = {
+					"id" : 0 , 
+					"x" : 0 , 
+					"y" : 0 , 
+					"content" : "none" , 
+					"mat" : "none" , 
+					"abr" : "none" , 
+					"color" : "none" , 
+					"space" : "none" ,
+				},
+				controller = {
+					"left" : 0 ,
+					"up" : 0 ,
+					"right" : 0 ,
+					"down" : 0 , 
+				};
+				
+			// Création de la map et Lancement du jeu
+						
+			$(document).ready(function(){
+				$(".trigger").click(function(){		
+					create_map(600,600,map_utilities.limit_x,map_utilities.limit_y,4);	 // Crée la carte
+					display_map();	// Display la carte
+					engine(); // Démarre le "moteur graphique et physique" du jeu (60 hertz)
+					$(".trigger").css("display" , "none"); // Cache le bouton de démarrage
+				});
+			});
+		</script>
+	</body>
+</html>

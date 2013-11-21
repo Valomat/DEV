@@ -1,0 +1,120 @@
+body{
+	margin:0;
+	font-family: helvetica;
+}
+
+#container{
+	width:100%;
+	max-width:960px;
+	margin:0 auto;
+}
+
+.map{
+	display:block;
+	width:600px;
+	height:600px;
+	margin:20px auto;
+	border:dashed #000 1px;
+}
+
+.case{
+	width:10px;
+	height:10px;
+	float:left;
+	font-size:20px;
+	text-align:center;
+	cursor:pointer;
+}
+
+.case:hover{
+	background-color:#FFF;
+	color:black;
+}
+
+.interface{
+	width:600px;
+	height:auto;
+	margin:auto;
+}
+
+.trigger, .character, .position, .zoom{
+	width:580px;
+	margin:auto;
+	padding:10px;
+	border:dashed #000 1px;
+	cursor: pointer;
+}
+
+.zoom{
+	width: 278px;
+	float: left;
+}
+
+.case_info, .character_info{
+	width: 278px;
+	height:auto;
+	float:left;
+	margin:10px;
+	border:dashed #999 1px;
+}
+
+.en_tete{
+	width: 100%;
+	height:auto;
+	float:left;
+	border:dashed #999 1px;
+}
+
+table{
+	width:100%;
+}
+
+table tr{
+	width:100%;
+	margin:0;
+	padding:0;
+}
+
+table tr td{
+	width:40%;
+	text-align:right;
+	margin:0;
+	padding:0;
+}
+
+table tr td.sep {
+	text-align: center;
+	width: 10%;
+}
+
+table tr td.results{
+	text-align: left;
+}
+
+@media screen and (max-width:768px){
+	.map{
+		width:360px;
+		height:360px;
+	}
+	
+	.case{
+		width:6px;
+		height:6px;
+		font-size:10px;
+	}
+	
+	.interface{
+		width:100%;
+		padding:0;
+	}
+	
+	.trigger, .character, .position{
+		width:338px;
+		margin: 10px auto;
+	}
+	.case_info, .character_info{
+		width: 338px;
+		margin:10px auto;
+		float:none;
+	}
+}
