@@ -20,65 +20,29 @@
 				<div class="info">
 					<table>
 						<tr>
-							<td>Coordonnées X</td><td class="sep">:</td><td class="cor_x results"></td>
-						</tr>
-						<tr>
-							<td>Coordonnées Y</td><td class="sep">:</td><td class="cor_y results"></td>
-						</tr>
-						<tr>
-							<td>ID de la case :</td><td class="sep">:</td><td class="id results"></td>
-						</tr>
-						<tr>
-							<td>Vitesse X</td><td class="sep">:</td><td class="v_x results"></td>
-						</tr>
-						<tr>
-							<td>Vitesse Y</td><td class="sep">:</td><td class="v_y results"></td>
-						</tr>
-						<tr>
-							<td>Position dans la case en X</td><td class="sep">:</td><td class="sm_x results"></td>
-						</tr>
-						<tr>
-							<td>Position dans la case en Y</td><td class="sep">:</td><td class="sm_y results"></td>
-						</tr>
-						<tr>
-							<td>Contenu</td><td class="sep">:</td><td class="content results"></td>
-						</tr>
-						<tr>
-							<td>Map X</td><td class="sep">:</td><td class="map_x results"></td>
-						</tr>
-						<tr>
-							<td>Map Y</td><td class="sep">:</td><td class="map_y results"></td>
-						</tr>
-						<tr>
-							<td>End X</td><td class="sep">:</td><td class="end_x results"></td>
-						</tr>
-						<tr>
-							<td>End Y</td><td class="sep">:</td><td class="end_y results"></td>
+							<td>GOLD</td><td class="sep">:</td><td class="gold results"></td>
 						</tr>
 					</table>
 				</div>
 			</div>
 		</div>
 		<script type="text/javascript">
-		
 			// initialise le Canvas
-		
 			var canvas = document.getElementById('Canvas');
 			var context = canvas.getContext('2d');
 			
 			
 		    
-		    // Variables utiles
-				
-			var	map_utilities = { // variables utiles lors de la création de la map
+		    // Variables
+			var	map_utilities = { // variables utiles lors de la création de la carte
 					"id" : 0 ,
 					"x" : 0 ,
 					"y" : 0 ,
 					"random" : 0 ,
-					"limit_x" : 30 ,
+					"limit_x" : 90 ,
 					"limit_y" : 30 ,
 				},
-				visual_map = {
+				visual_map = { // informations du rendu du jeu (taille de la fenêtre, ratio, etc...)
 					"ratio" :55,
 					"x" : 0 ,
 					"y" : 0 ,
@@ -93,13 +57,13 @@
 					"scroll_state_x" : 0 ,
 					"scroll_state_y" : 0 
 				},		
-				virtual_map = [ ],
-				ligne = [ ],
-				index = [ ],
-				my_character = { 
+				virtual_map = [ ], // Variable qui contiendra toutes les informations de la carte
+				ligne = [ ], // variable utile lors de la création de la carte
+				index = [ ], // index des cases de la carte qui sera utile pour retrouver les cases par leur ID
+				my_character = { // variable contenant les informations du personnage
 					"name" : "Isildur" , 
-					"x" : 1 , 
-					"y" : 1 ,
+					"x" : 10 , 
+					"y" : 10 ,
 					"current_speed_x" : 0 ,
 					"current_speed_y" : 0 ,
 					"max_speed" : 3 , 
@@ -107,44 +71,46 @@
 					"next_case" : "" ,
 					"eq_x" : 1 ,
 					"eq_y" : 1 ,
-					"width" : 0.3 , 
-					"height" : 0.6 ,
+					"width" : 0.25 , 
+					"height" : 0.5 ,
 					"scroll_x" : 0 ,
 					"scroll_y" : 0 ,
 					"sprite" : "" ,
 					"frame" : 0 , 
 					"max_frame" : 4,
-					"sens" : 0
+					"sens" : 0 ,
+					"inventaire" : {
+							"gold" : 0 
+						}
 				},
-				controller = {
+				controller = { // Variable controllers
 					"left" : 0 ,
 					"up" : 0 ,
 					"right" : 0 ,
 					"down" : 0 , 
 				},
-				path = {
+				path = { // Variable pour le chemin aléatoire
 					"currentx" : 0 ,
 					"currenty" : 0 ,
 					"coming" : 0 ,
 					"going" : 0 ,
 				},
-				end = {
+				end = { // Variable qui contient les informations de la case de fin de niveau
 					"x" : 0,
 					"y" : 0
 				},
-				map_objects = {
+				map_objects = { // Variable qui contiendra les informations concernant les objets de la carte (pépites d'or, etc...)
 					"sprite" : "" 
 				},
-				GameHeart;
+				GameHeart; // Variable pour le setInterval du moteur du jeu
 				
 			// Création de la map et Lancement du jeu
-						
 			$(document).ready(function(){
 				$(".trigger").click(function(){
-					load_sprites();	
-					set_frames();
-					create_map(map_utilities.limit_x,map_utilities.limit_y);	 // Crée la carte
-					GameHeart = setInterval(function(){engine()},1000/60); 
+					load_sprites();	// Charge les sprites
+					create_map(map_utilities.limit_x,map_utilities.limit_y); // Crée la carte
+					set_frames(); // Commence le moteur d'animations
+					GameHeart = setInterval(function(){engine()},1000/60); // Commence le moteur du jeu
 					$(".trigger").css("display" , "none"); // Cache le bouton de démarrage
 				});
 			});

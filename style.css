@@ -15,7 +15,7 @@ body{
 	display:block;
 	position: relative;
 	margin:20px auto;
-	border:dashed #000 1px;
+	border: solid #000 1px;
 	z-index: + 1;
 }
 
@@ -39,7 +39,7 @@ body{
 	margin:auto;
 }
 
-.trigger, .character, .position, .zoom{
+.trigger, .character, .position, .zoom, .show_map, .map-results{
 	width:580px;
 	margin:auto;
 	padding:10px;

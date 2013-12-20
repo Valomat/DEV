@@ -5,11 +5,19 @@ MOTEUR DU JEU
 */
 function engine(){
 	move(my_character); // check les déplacements du perso
-	show_info(); // affiche les informations pour l'utilisateur (plus qu'optionnel)
+	collect(my_character); // Gère le rammassage d'objets
+	show_info(); // affiche la quantité d'or que le joueur possède
 	display_map(); // affiche la carte
 	display_character(); // affiche le personnage
-	check_end();
+	check_end(); // Vérifie si le joueur a atteint la sortie
 }
+
+
+/* 
+====================================
+FIN DU JEU ? 
+====================================
+*/
 function check_end(){
 	if(my_character.eq_x == end.x && my_character.eq_y == end.y && my_character.x >= 10 && my_character.y <= 45){
 		window.clearInterval(GameHeart)
@@ -35,7 +43,6 @@ function load_sprites(){
 	map_objects.sprite = new Image();
 	map_objects.sprite.src = "img/objects_sprite.png";
 }
-
 function set_frames(){
 	if( my_character.frame < my_character.max_frame ){
 		my_character.frame += 1;
@@ -46,14 +53,37 @@ function set_frames(){
 	setTimeout(set_frames, 1000/12);
 }
 
-// index de la map (permet de retrouver une case par son id)
 
+/* 
+====================================
+INDEX DE LA CARTE
+Fonction qui crée un index (variable tableau) des cases en fonction de leur ID; appelé lors de la création de la carte
+====================================
+*/
 function map_index(case_id,line,row){
 	index[case_id] = { "i" : line , "j" : row };
 }
 
-// Déplacements du perso (tous les 1/60e de secondes, le navigateur déplace ou non le personnage) 
 
+/* 
+====================================
+COLLECTE D'OBJETS
+Fonction qui se le contenu de la case sur laquelle se trouve le perso est collectable, et si oui, le collecte.
+====================================
+*/
+function collect(object){
+	if( virtual_map[index[object.case_id].i][index[object.case_id].j].content.inventaire == true ){
+		object.inventaire.gold += virtual_map[index[object.case_id].i][index[object.case_id].j].content.valeur;
+		virtual_map[index[object.case_id].i][index[object.case_id].j].content = objects[1];
+	}
+}
+
+/* 
+====================================
+DEPLACEMENTS
+Fonction dégueulasse qui gère les déplacements du personnage et les collisions, appelée à 60hertz par la fonction engine();
+====================================
+*/
 function move(object){
 	// si flèche droite enfoncée
 	if(controller.left == 0 && controller.right == 0 && controller.down == 0 && controller.up == 0){
@@ -69,12 +99,12 @@ function move(object){
 		}
 		object.current_speed_x = Math.min(object.current_speed_x + 1,object.max_speed);
 		object.next_case = virtual_map[index[object.case_id].i+1][index[object.case_id].j];
-		if((object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j+1].space==1) || (object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j+1].space==0 && object.y <= visual_map.ratio-(object.height*visual_map.ratio))){
+		if((object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j+1].space==1) || (object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j+1].space==0 && object.y <= visual_map.ratio-(object.height/2*visual_map.ratio))){
 			object.x += object.current_speed_x;
 		}
-		else if (object.next_case.space == 0  || (object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j+1].space==0 && object.y > visual_map.ratio-(object.height*visual_map.ratio))){
+		else if (object.next_case.space == 0  || (object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j+1].space==0 && object.y > visual_map.ratio-(object.height/2*visual_map.ratio))){
 			object.current_speed_x = Math.min(object.current_speed_x + 1,object.max_speed);
-			object.x = Math.min(object.x + object.current_speed_x, visual_map.ratio - object.width * visual_map.ratio);
+			object.x = Math.min(object.x + object.current_speed_x, visual_map.ratio - object.width/2 * visual_map.ratio);
 		}
 		if(object.x >= visual_map.ratio){
 			object.x -= visual_map.ratio;
@@ -91,13 +121,13 @@ function move(object){
 			object.current_speed_x = 0;
 		}
 		object.next_case = virtual_map[index[object.case_id].i-1][index[object.case_id].j];
-		if((object.next_case.space == 1 && virtual_map[index[object.case_id].i-1][index[object.case_id].j+1].space==1) || (object.next_case.space == 1 && virtual_map[index[object.case_id].i-1][index[object.case_id].j+1].space==0 && object.y <= visual_map.ratio-(object.height*visual_map.ratio))){
+		if((object.next_case.space == 1 && virtual_map[index[object.case_id].i-1][index[object.case_id].j+1].space==1) || (object.next_case.space == 1 && virtual_map[index[object.case_id].i-1][index[object.case_id].j+1].space==0 && object.y <= visual_map.ratio-(object.height/2*visual_map.ratio))){
 			object.current_speed_x = Math.max(object.current_speed_x - 1, -object.max_speed);
 			object.x += object.current_speed_x;
 		}
-		else if (object.next_case.space == 0 || (object.next_case.space == 1 && virtual_map[index[object.case_id].i-1][index[object.case_id].j+1].space==0 && object.y > visual_map.ratio-(object.height*visual_map.ratio))){
+		else if (object.next_case.space == 0 || (object.next_case.space == 1 && virtual_map[index[object.case_id].i-1][index[object.case_id].j+1].space==0 && object.y > visual_map.ratio-(object.height/2*visual_map.ratio))){
 			object.current_speed_x = Math.max(object.current_speed_x - 1, -object.max_speed);
-			object.x = Math.max(object.x + object.current_speed_x, 0);
+			object.x = Math.max(object.x + object.current_speed_x, 0 + object.width/2 * visual_map.ratio);
 		}
 		if(object.x < 0){
 			object.x += visual_map.ratio;
@@ -114,13 +144,13 @@ function move(object){
 			object.current_speed_y = 0;
 		}
 		object.next_case = virtual_map[index[object.case_id].i][index[object.case_id].j+1];
-		if((object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j+1].space==1) || (object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j+1].space==0 && object.x <= visual_map.ratio-(object.width*visual_map.ratio))){
+		if((object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j+1].space==1) || (object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j+1].space==0 && object.x <= visual_map.ratio-(object.width/2 * visual_map.ratio))){
 			object.current_speed_y = Math.min(object.current_speed_y + 1, object.max_speed);
 			object.y += object.current_speed_y;
 		}
-		else if (object.next_case.space == 0 || (object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j+1].space==0 && object.x > visual_map.ratio-(object.width*visual_map.ratio))){
+		else if (object.next_case.space == 0 || (object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j+1].space==0 && object.x > visual_map.ratio-(object.width/2*visual_map.ratio))){
 			object.current_speed_y = Math.min(object.current_speed_y + 1, object.max_speed);
-			object.y = Math.min(object.y + object.current_speed_y, visual_map.ratio - object.height * visual_map.ratio);
+			object.y = Math.min(object.y + object.current_speed_y, visual_map.ratio - object.height/2 * visual_map.ratio);
 		}
 		
 		if(object.y >= visual_map.ratio){
@@ -137,13 +167,13 @@ function move(object){
 			object.current_speed_y = 0;
 		}
 		object.next_case = virtual_map[index[object.case_id].i][index[object.case_id].j-1];
-		if((object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j-1].space==1) || (object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j-1].space==0 && object.x <= visual_map.ratio-(object.width*visual_map.ratio))){
+		if((object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j-1].space==1) || (object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j-1].space==0 && object.x <= visual_map.ratio-(object.width/2*visual_map.ratio))){
 			object.current_speed_y = Math.max(object.current_speed_y - 1, -object.max_speed);
 			object.y += object.current_speed_y;
 		}
-		else if (object.next_case.space == 0 || (object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j-1].space==0 && object.x > visual_map.ratio-(object.width*visual_map.ratio))){
+		else if (object.next_case.space == 0 || (object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j-1].space==0 && object.x > visual_map.ratio-(object.width/2*visual_map.ratio))){
 			object.current_speed_y = Math.max(object.current_speed_y - 1, -object.max_speed);
-			object.y = Math.max(object.y + object.current_speed_y, 0);
+			object.y = Math.max(object.y + object.current_speed_y, 0 + object.height/2 *visual_map.ratio);
 		}
 		if(object.y < 0){
 			object.y += visual_map.ratio;
@@ -153,20 +183,21 @@ function move(object){
 	}
 	
 	// appel au fonctions pour ralentir le perso
-	
 	if(controller.left == 0 && controller.right == 0){
 		slowDownX();
 	}
 	if(controller.down == 0 && controller.up == 0){
 		slowDownY();
 	}
-	
-	
-	
 }
 
-// fonction qui obtient un nombre aléatoire entre 0 et limit
 
+/* 
+====================================
+ALEATOIRE
+Fonction qui me permet d'obtenir un nombre aléatoire utilisable dans les tableau. Pas sûr que ce soit la méthode la plus optimisée mais jeme fais pas chier.
+====================================
+*/
 function get_random(limit){
 	var rand = parseInt(Math.random() * limit);
 	return rand;
@@ -176,7 +207,7 @@ function get_random(limit){
 /* 
 ====================================
 CANVAS DE LA CARTE
-Crée la base de la carte, donnant à chaque case une coordonnée X et Y, et un ID référencé dans un index
+Crée la base de la carte, donnant à chaque case une coordonnée X et Y, et un ID et un contenu vide de base
 ====================================
 */
 function create_map(limitL, limitH){
@@ -188,12 +219,12 @@ function create_map(limitL, limitH){
 				"y" : map_utilities.y , 
 				"content" : { }
 			};
-			map_index(map_utilities.id,i,j);
+			map_index(map_utilities.id,i,j); // ajoute la case à la variable index
 			map_utilities.y += 1;
 			map_utilities.id += 1;
 		}
 		virtual_map[i] = ligne;
-		ligne = [ ]
+		ligne = [ ];
 		map_utilities.y -= limitH;
 		map_utilities.x += 1;	
 	}
@@ -202,9 +233,17 @@ function create_map(limitL, limitH){
 	create_path(limitL,limitH);
 }
 
+
+/* 
+====================================
+OBJETS ALEATOIRES
+Fonction qui ajoute des objets au contenu des cases
+====================================
+*/
 function set_objects(positionI, positionJ){
-	virtual_map[positionI][positionJ].content = objects[get_random(3)];
-	
+	if(Math.random() < 0.1){
+		virtual_map[positionI][positionJ].content = objects[get_random(2)];
+	}
 }
 
 
@@ -241,13 +280,13 @@ Fonction qui crée un chemin aléatoire de gauche à droite, et ajoute une sorti
 ====================================
 */
 function create_path(limitL,limitH){
-	path.currenty = get_random((limitH-6)/3);
-	my_character.case_id = virtual_map[1][(path.currenty*3)+1].id;
+	path.currenty = get_random((limitH-6)/3); // définit à quelle hauteur le chemin va commencer
+	my_character.case_id = virtual_map[1][(path.currenty*3)+1].id; // place le personnage à cette hauteur (pour qu'il se toruve bien sur le chemin au début !)
 	my_character.eq_x = (path.currentx*3) + 1;
 	my_character.eq_y = (path.currenty*3) + 1;
 	context.translate( 0 , -visual_map.scrolled_y)
 	while(path.currentx < limitL/3){
-		getSens(limitH);
+		getSens(limitH); // appel à la fonction getSens(), qui décide les possibilités de chemin
 		for(i=path.currentx*3; i<path.currentx*3+3; i++){
 			for(j=path.currenty*3; j<path.currenty*3+3; j++){
 				virtual_map[i][j].space = path_temp[path.coming][path.going].map[get_random(3)][i-(path.currentx*3)][j-(path.currenty*3)];
@@ -282,6 +321,12 @@ function create_path(limitL,limitH){
 }
 
 
+/* 
+====================================
+POSSIBILITES DE CHEMIN
+Fonction qui donne les possibilités de chemin
+====================================
+*/
 function getSens(limitH){
 	if(path.currenty >= (limitH-3)/3 && path.coming == 1){
 		path.going = sens_when_down[0];
@@ -349,7 +394,7 @@ Fonction qui affiche le personnage
 ====================================
 */
 function display_character(){
-	context.drawImage( my_character.sprite , 30 * my_character.frame, 60 * my_character.sens , 30 , 60 , my_character.eq_x*visual_map.ratio + my_character.x, my_character.eq_y * visual_map.ratio + my_character.y , my_character.width * visual_map.ratio , my_character.height * visual_map.ratio);
+	context.drawImage( my_character.sprite , 30 * my_character.frame, 60 * my_character.sens , 30 , 60 , my_character.eq_x*visual_map.ratio + my_character.x - my_character.width/2 * visual_map.ratio, my_character.eq_y * visual_map.ratio + my_character.y - my_character.height/2 * visual_map.ratio, my_character.width * visual_map.ratio , my_character.height * visual_map.ratio);
 }
 
 
@@ -394,24 +439,23 @@ function keyUp(e){
 }
 
 
-// affiche les infos
+/* 
+====================================
+INFOS
+Fonction qui affiche les informations du personnage
+====================================
+*/
 function show_info(){
-	$(".cor_x").html(my_character.eq_x);
-	$(".cor_y").html(my_character.eq_y);
-	$(".id").html(my_character.case_id);
-	$(".v_x").html(my_character.current_speed_x);
-	$(".v_y").html(my_character.current_speed_y);
-	$(".sm_x").html(my_character.x);
-	$(".sm_y").html(my_character.y);
-	$(".content").html(virtual_map[index[my_character.case_id].i][index[my_character.case_id].j].content.name);
-	$(".map_x").html(visual_map.eq_x);
-	$(".map_y").html(visual_map.eq_y);
-	$(".end_x").html(end.x);
-	$(".end_y").html(end.y);
+	$(".gold").html(my_character.inventaire.gold);
 }
 
-// ralentir le perso en x
 
+/* 
+====================================
+RALENTIR X
+Fonction qui ralentit le personnage en x
+====================================
+*/
 function slowDownX()
 {
   if (my_character.current_speed_x > 0)
@@ -420,8 +464,13 @@ function slowDownX()
     my_character.current_speed_x += 1;
 }
 
-// ralentir le perso en y
 
+/* 
+====================================
+RALENTIR Y
+Fonction qui ralentit le personnage en y
+====================================
+*/
 function slowDownY()
 {
   if (my_character.current_speed_y > 0)
