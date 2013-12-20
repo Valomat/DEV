@@ -1,7 +1,7 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<!DOCTYPE HTML>
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-		<title>json essai</title>
+		<title>Labyrinthe</title>
 		<link rel="stylesheet" href="style.css" title="style" type="text/css" media="screen" charset="utf-8">
 		<script type="text/javascript" src="js/jquery.js" ></script>
 		<script type="text/javascript" src="js/variables.js" ></script>
@@ -10,12 +10,12 @@
 			</head>
 	<body onkeydown="keyDown(event)" onkeyup="keyUp(event)">
 		<div id = "container">
-			<canvas id="Canvas" class="map" width="600px" height='600px'>
+			<canvas id="Canvas" class="map" width="880" height='660'>
 			</canvas>
 			<div class="results"></div>
 			<div class="interface">
 				<div class="trigger">
-					Créer une carte de monde...
+					Créer un Labyrinthe...
 				</div>
 				<div class="info">
 					<table>
@@ -46,6 +46,15 @@
 						<tr>
 							<td>Map X</td><td class="sep">:</td><td class="map_x results"></td>
 						</tr>
+						<tr>
+							<td>Map Y</td><td class="sep">:</td><td class="map_y results"></td>
+						</tr>
+						<tr>
+							<td>End X</td><td class="sep">:</td><td class="end_x results"></td>
+						</tr>
+						<tr>
+							<td>End Y</td><td class="sep">:</td><td class="end_y results"></td>
+						</tr>
 					</table>
 				</div>
 			</div>
@@ -57,15 +66,7 @@
 			var canvas = document.getElementById('Canvas');
 			var context = canvas.getContext('2d');
 			
-			// Charge les images de textures (code dégueulasse)
 			
-			var images = [];
-		    var imageObj = new Image();
-		    imageObj.src = "img/mur.png";
-		    images[0] = imageObj;
-		    imageObj = new Image();
-		    imageObj.src = "img/sol.png";
-		    images[1] = imageObj;
 		    
 		    // Variables utiles
 				
@@ -77,21 +78,20 @@
 					"limit_x" : 30 ,
 					"limit_y" : 30 ,
 				},
-				ref = {
-					"speed_x" : 0 ,
-					"spedd_y" : 0 ,
-					"x" : 0 , 
-					"y" : 0 ,
-				},
 				visual_map = {
-					"ratio" : 60 ,
+					"ratio" :55,
 					"x" : 0 ,
 					"y" : 0 ,
-					"width" : 10 ,
-					"height" : 10 ,
+					"width" : 16 ,
+					"height" : 14 ,
 					"eq_x" : 0 ,
 					"eq_y" : 0 ,
-					"scroll_speed" : 1,
+					"scrolled_x" : 0 ,
+					"scrolled_y" : 0 ,
+					"to_scroll_x" : 0 ,
+					"to_scroll_y" : 0 ,
+					"scroll_state_x" : 0 ,
+					"scroll_state_y" : 0 
 				},		
 				virtual_map = [ ],
 				ligne = [ ],
@@ -102,51 +102,49 @@
 					"y" : 1 ,
 					"current_speed_x" : 0 ,
 					"current_speed_y" : 0 ,
-					"max_speed" : 4 , 
+					"max_speed" : 3 , 
 					"case_id" : "" , 
 					"next_case" : "" ,
 					"eq_x" : 1 ,
 					"eq_y" : 1 ,
-					"width" : 0.25 , 
-					"height" : 0.5 ,
+					"width" : 0.3 , 
+					"height" : 0.6 ,
 					"scroll_x" : 0 ,
-					"scroll_y" : 0 
-				},
-				ci,
-				current_case = {
-					"id" : 0 , 
-					"x" : 0 , 
-					"y" : 0 , 
-					"content" : "none" , 
-					"mat" : "none" , 
-					"abr" : "none" , 
-					"color" : "none" , 
-					"space" : "none" ,
-				},
-				next_case = {
-					"id" : 0 , 
-					"x" : 0 , 
-					"y" : 0 , 
-					"content" : "none" , 
-					"mat" : "none" , 
-					"abr" : "none" , 
-					"color" : "none" , 
-					"space" : "none" ,
+					"scroll_y" : 0 ,
+					"sprite" : "" ,
+					"frame" : 0 , 
+					"max_frame" : 4,
+					"sens" : 0
 				},
 				controller = {
 					"left" : 0 ,
 					"up" : 0 ,
 					"right" : 0 ,
 					"down" : 0 , 
-				};
+				},
+				path = {
+					"currentx" : 0 ,
+					"currenty" : 0 ,
+					"coming" : 0 ,
+					"going" : 0 ,
+				},
+				end = {
+					"x" : 0,
+					"y" : 0
+				},
+				map_objects = {
+					"sprite" : "" 
+				},
+				GameHeart;
 				
 			// Création de la map et Lancement du jeu
 						
 			$(document).ready(function(){
-				$(".trigger").click(function(){		
-					create_map(600,600,map_utilities.limit_x,map_utilities.limit_y,4);	 // Crée la carte
-					display_map();	// Display la carte
-					engine(); // Démarre le "moteur graphique et physique" du jeu (60 hertz)
+				$(".trigger").click(function(){
+					load_sprites();	
+					set_frames();
+					create_map(map_utilities.limit_x,map_utilities.limit_y);	 // Crée la carte
+					GameHeart = setInterval(function(){engine()},1000/60); 
 					$(".trigger").css("display" , "none"); // Cache le bouton de démarrage
 				});
 			});

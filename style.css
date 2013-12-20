@@ -1,6 +1,8 @@
 body{
 	margin:0;
 	font-family: helvetica;
+	color: black;
+	background-color: white;
 }
 
 #container{
@@ -11,10 +13,10 @@ body{
 
 .map{
 	display:block;
-	width:600px;
-	height:600px;
+	position: relative;
 	margin:20px auto;
 	border:dashed #000 1px;
+	z-index: + 1;
 }
 
 .case{

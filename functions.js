@@ -1,11 +1,49 @@
-// Moteur du jeu à 60hertz secondes
-
+/* 
+====================================
+MOTEUR DU JEU
+====================================
+*/
 function engine(){
-	move_char(); // check les déplacements du perso
+	move(my_character); // check les déplacements du perso
 	show_info(); // affiche les informations pour l'utilisateur (plus qu'optionnel)
 	display_map(); // affiche la carte
 	display_character(); // affiche le personnage
-	setTimeout(engine, 1000/60); // 60 hertz
+	check_end();
+}
+function check_end(){
+	if(my_character.eq_x == end.x && my_character.eq_y == end.y && my_character.x >= 10 && my_character.y <= 45){
+		window.clearInterval(GameHeart)
+		alert("Vous avez atteint la sortie !")
+		location.reload();
+	}
+}
+
+
+/* 
+====================================
+LOAD & SET SPRITES
+Fonction qui assigne les sprites chargées au différents objets du jeu
+====================================
+*/
+function load_sprites(){
+	virtual_map.sprite = new Image();
+	virtual_map.sprite.src = "img/map_sprite.png";
+
+	my_character.sprite = new Image();
+	my_character.sprite.src = "img/sprite.png";
+	
+	map_objects.sprite = new Image();
+	map_objects.sprite.src = "img/objects_sprite.png";
+}
+
+function set_frames(){
+	if( my_character.frame < my_character.max_frame ){
+		my_character.frame += 1;
+	}
+	else{
+		my_character.frame = 0;
+	}
+	setTimeout(set_frames, 1000/12);
 }
 
 // index de la map (permet de retrouver une case par son id)
@@ -16,124 +54,102 @@ function map_index(case_id,line,row){
 
 // Déplacements du perso (tous les 1/60e de secondes, le navigateur déplace ou non le personnage) 
 
-function move_char(){
-
+function move(object){
 	// si flèche droite enfoncée
+	if(controller.left == 0 && controller.right == 0 && controller.down == 0 && controller.up == 0){
+		object.max_frame = 0;
+	}
+	else{
+		object.max_frame = 4;
+	}
 	
 	if(controller.right == 1){
-		if(my_character.current_speed_x<0){
-			my_character.current_speed_x = 0;
+		if(object.current_speed_x<0){
+			object.current_speed_x = 0;
 		}
-		my_character.current_speed_x = Math.min(my_character.current_speed_x + 1,my_character.max_speed);
-		my_character.next_case = virtual_map[index[my_character.case_id].i+1][index[my_character.case_id].j];
-		if((my_character.next_case.space == 1 && virtual_map[index[my_character.case_id].i+1][index[my_character.case_id].j+1].space==1) || (my_character.next_case.space == 1 && virtual_map[index[my_character.case_id].i+1][index[my_character.case_id].j+1].space==0 && my_character.y <= visual_map.ratio-(my_character.height*visual_map.ratio))){
-			my_character.x += my_character.current_speed_x;
+		object.current_speed_x = Math.min(object.current_speed_x + 1,object.max_speed);
+		object.next_case = virtual_map[index[object.case_id].i+1][index[object.case_id].j];
+		if((object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j+1].space==1) || (object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j+1].space==0 && object.y <= visual_map.ratio-(object.height*visual_map.ratio))){
+			object.x += object.current_speed_x;
 		}
-		else if (my_character.next_case.space == 0  || (my_character.next_case.space == 1 && virtual_map[index[my_character.case_id].i+1][index[my_character.case_id].j+1].space==0 && my_character.y > visual_map.ratio-(my_character.height*visual_map.ratio))){
-			my_character.current_speed_x = Math.min(my_character.current_speed_x + 1,my_character.max_speed);
-			my_character.x = Math.min(my_character.x + my_character.current_speed_x, visual_map.ratio - my_character.width * visual_map.ratio);
+		else if (object.next_case.space == 0  || (object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j+1].space==0 && object.y > visual_map.ratio-(object.height*visual_map.ratio))){
+			object.current_speed_x = Math.min(object.current_speed_x + 1,object.max_speed);
+			object.x = Math.min(object.x + object.current_speed_x, visual_map.ratio - object.width * visual_map.ratio);
 		}
-		visual_map.eq_x = Math.min(Math.max(my_character.eq_x - visual_map.width/2, 0), map_utilities.limit_x - visual_map.width - 1);
-		if(visual_map.eq_x == my_character.eq_x - visual_map.width/2&& visual_map.x < visual_map.ratio * (map_utilities.limit_x -visual_map.width) - my_character.max_speed && visual_map.scroll_x != my_character.x ){
-			context.translate(- my_character.current_speed_x, 0);
-			visual_map.x += my_character.current_speed_x;
+		if(object.x >= visual_map.ratio){
+			object.x -= visual_map.ratio;
+			object.eq_x += 1;
+			object.case_id = object.next_case.id;
 		}
-		
-		if(my_character.x >= visual_map.ratio){
-			my_character.x -= visual_map.ratio;
-			my_character.eq_x += 1;
-			my_character.case_id = my_character.next_case.id;
-		}
-		
-		visual_map.scroll_x = my_character.x;
+		object.sens = 0;
 	}
 	
 	// si flèche gauche enfoncée
 	
 	if(controller.left == 1){
-		if(my_character.current_speed_x>0){
-			my_character.current_speed_x = 0;
+		if(object.current_speed_x>0){
+			object.current_speed_x = 0;
 		}
-		my_character.next_case = virtual_map[index[my_character.case_id].i-1][index[my_character.case_id].j];
-		if((my_character.next_case.space == 1 && virtual_map[index[my_character.case_id].i-1][index[my_character.case_id].j+1].space==1) || (my_character.next_case.space == 1 && virtual_map[index[my_character.case_id].i-1][index[my_character.case_id].j+1].space==0 && my_character.y <= visual_map.ratio-(my_character.height*visual_map.ratio))){
-			my_character.current_speed_x = Math.max(my_character.current_speed_x - 1, -my_character.max_speed);
-			my_character.x += my_character.current_speed_x;
+		object.next_case = virtual_map[index[object.case_id].i-1][index[object.case_id].j];
+		if((object.next_case.space == 1 && virtual_map[index[object.case_id].i-1][index[object.case_id].j+1].space==1) || (object.next_case.space == 1 && virtual_map[index[object.case_id].i-1][index[object.case_id].j+1].space==0 && object.y <= visual_map.ratio-(object.height*visual_map.ratio))){
+			object.current_speed_x = Math.max(object.current_speed_x - 1, -object.max_speed);
+			object.x += object.current_speed_x;
 		}
-		else if (my_character.next_case.space == 0 || (my_character.next_case.space == 1 && virtual_map[index[my_character.case_id].i-1][index[my_character.case_id].j+1].space==0 && my_character.y > visual_map.ratio-(my_character.height*visual_map.ratio))){
-			my_character.current_speed_x = Math.max(my_character.current_speed_x - 1, -my_character.max_speed);
-			my_character.x = Math.max(my_character.x + my_character.current_speed_x, 0);
+		else if (object.next_case.space == 0 || (object.next_case.space == 1 && virtual_map[index[object.case_id].i-1][index[object.case_id].j+1].space==0 && object.y > visual_map.ratio-(object.height*visual_map.ratio))){
+			object.current_speed_x = Math.max(object.current_speed_x - 1, -object.max_speed);
+			object.x = Math.max(object.x + object.current_speed_x, 0);
 		}
-		visual_map.eq_x = Math.min(Math.max(my_character.eq_x - visual_map.width/2, 0), map_utilities.limit_x - visual_map.width - 1);
-		if(visual_map.eq_x == my_character.eq_x - visual_map.width/2 && visual_map.x > my_character.max_speed && visual_map.scroll_x != my_character.x){
-			context.translate(- my_character.current_speed_x, 0);
-			visual_map.x += my_character.current_speed_x;
+		if(object.x < 0){
+			object.x += visual_map.ratio;
+			object.eq_x -= 1;
+			object.case_id = object.next_case.id;
 		}
-		if(my_character.x < 0){
-			my_character.x += visual_map.ratio;
-			my_character.eq_x -= 1;
-			my_character.case_id = my_character.next_case.id;
-		}
-		visual_map.scroll_x = my_character.x;
+		object.sens = 1;
 	}
 	
 	// si flèche bas enfoncée
 	
 	if(controller.down == 1){
-		if(my_character.current_speed_y < 0){
-			my_character.current_speed_y = 0;
+		if(object.current_speed_y < 0){
+			object.current_speed_y = 0;
 		}
-		my_character.next_case = virtual_map[index[my_character.case_id].i][index[my_character.case_id].j+1];
-		if((my_character.next_case.space == 1 && virtual_map[index[my_character.case_id].i+1][index[my_character.case_id].j+1].space==1) || (my_character.next_case.space == 1 && virtual_map[index[my_character.case_id].i+1][index[my_character.case_id].j+1].space==0 && my_character.x <= visual_map.ratio-(my_character.width*visual_map.ratio))){
-			my_character.current_speed_y = Math.min(my_character.current_speed_y + 1, my_character.max_speed);
-			my_character.y += my_character.current_speed_y;
+		object.next_case = virtual_map[index[object.case_id].i][index[object.case_id].j+1];
+		if((object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j+1].space==1) || (object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j+1].space==0 && object.x <= visual_map.ratio-(object.width*visual_map.ratio))){
+			object.current_speed_y = Math.min(object.current_speed_y + 1, object.max_speed);
+			object.y += object.current_speed_y;
 		}
-		else if (my_character.next_case.space == 0 || (my_character.next_case.space == 1 && virtual_map[index[my_character.case_id].i+1][index[my_character.case_id].j+1].space==0 && my_character.x > visual_map.ratio-(my_character.width*visual_map.ratio))){
-			my_character.current_speed_y = Math.min(my_character.current_speed_y + 1, my_character.max_speed);
-			my_character.y = Math.min(my_character.y + my_character.current_speed_y, visual_map.ratio - my_character.height * visual_map.ratio);
-		}
-		visual_map.eq_y = Math.min(Math.max(my_character.eq_y - visual_map.height/2, 0), map_utilities.limit_y - visual_map.height - 1);
-		if(visual_map.eq_y == my_character.eq_y - visual_map.height/2 && visual_map.y < visual_map.ratio * (map_utilities.limit_y -visual_map.height) - my_character.max_speed && visual_map.scroll_y != my_character.y ){
-			context.translate(0, - my_character.current_speed_y);
-			visual_map.y += my_character.current_speed_y;
+		else if (object.next_case.space == 0 || (object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j+1].space==0 && object.x > visual_map.ratio-(object.width*visual_map.ratio))){
+			object.current_speed_y = Math.min(object.current_speed_y + 1, object.max_speed);
+			object.y = Math.min(object.y + object.current_speed_y, visual_map.ratio - object.height * visual_map.ratio);
 		}
 		
-		if(my_character.y >= visual_map.ratio){
-			my_character.y -= visual_map.ratio;
-			my_character.eq_y += 1;
-			my_character.case_id = my_character.next_case.id; 
+		if(object.y >= visual_map.ratio){
+			object.y -= visual_map.ratio;
+			object.eq_y += 1;
+			object.case_id = object.next_case.id; 
 		}
-		
-		
-		visual_map.scroll_y = my_character.y;
 	}
 	
 	// si flèche haut enfoncée
 	
 	if(controller.up == 1){
-		if(my_character.current_speed_y > 0){
-			my_character.current_speed_y = 0;
+		if(object.current_speed_y > 0){
+			object.current_speed_y = 0;
 		}
-		my_character.next_case = virtual_map[index[my_character.case_id].i][index[my_character.case_id].j-1];
-		if((my_character.next_case.space == 1 && virtual_map[index[my_character.case_id].i+1][index[my_character.case_id].j-1].space==1) || (my_character.next_case.space == 1 && virtual_map[index[my_character.case_id].i+1][index[my_character.case_id].j-1].space==0 && my_character.x <= visual_map.ratio-(my_character.width*visual_map.ratio))){
-			my_character.current_speed_y = Math.max(my_character.current_speed_y - 1, -my_character.max_speed);
-			my_character.y += my_character.current_speed_y;
+		object.next_case = virtual_map[index[object.case_id].i][index[object.case_id].j-1];
+		if((object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j-1].space==1) || (object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j-1].space==0 && object.x <= visual_map.ratio-(object.width*visual_map.ratio))){
+			object.current_speed_y = Math.max(object.current_speed_y - 1, -object.max_speed);
+			object.y += object.current_speed_y;
 		}
-		else if (my_character.next_case.space == 0 || (my_character.next_case.space == 1 && virtual_map[index[my_character.case_id].i+1][index[my_character.case_id].j-1].space==0 && my_character.x > visual_map.ratio-(my_character.width*visual_map.ratio))){
-			my_character.current_speed_y = Math.max(my_character.current_speed_y - 1, -my_character.max_speed);
-			my_character.y = Math.max(my_character.y + my_character.current_speed_y, 0);
+		else if (object.next_case.space == 0 || (object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j-1].space==0 && object.x > visual_map.ratio-(object.width*visual_map.ratio))){
+			object.current_speed_y = Math.max(object.current_speed_y - 1, -object.max_speed);
+			object.y = Math.max(object.y + object.current_speed_y, 0);
 		}
-		
-		visual_map.eq_y = Math.min(Math.max(my_character.eq_y - visual_map.height/2, 0), map_utilities.limit_y - visual_map.height - 1);
-		if(visual_map.eq_y == my_character.eq_y - visual_map.height/2 && visual_map.y > my_character.max_speed && visual_map.scroll_y != my_character.y){
-			context.translate(0, - my_character.current_speed_y);
-			visual_map.y += my_character.current_speed_y;
+		if(object.y < 0){
+			object.y += visual_map.ratio;
+			object.eq_y -= 1;
+			object.case_id = object.next_case.id;
 		}
-		if(my_character.y < 0){
-			my_character.y += visual_map.ratio;
-			my_character.eq_y -= 1;
-			my_character.case_id = my_character.next_case.id;
-		}
-		visual_map.scroll_y = my_character.y;
 	}
 	
 	// appel au fonctions pour ralentir le perso
@@ -145,76 +161,8 @@ function move_char(){
 		slowDownY();
 	}
 	
-}
-
-// fonction inutilisée pour l'instant
-
-function scroll_map(){
-	visual_map.eq_x = Math.min(Math.max(my_character.eq_x - visual_map.width/2, 0), map_utilities.limit_x - visual_map.width - 1);
-	visual_map.eq_y = Math.min(Math.max(my_character.eq_y - visual_map.height/2, 0), map_utilities.limit_x - visual_map.height - 1);
-	if(visual_map.eq_x == my_character.eq_x - visual_map.width/2 && visual_map.x - my_character.x !=  0){
-		context.translate(-my_character.current_speed_x, 0);
-	}
-	if(visual_map.eq_y == my_character.eq_y - visual_map.height/2 && visual_map.y - my_character.y !=  0){
-		context.translate(0, -my_character.current_speed_y);
-	}
-	visual_map.y = my_character.y;
-
 	
 	
-	
-	/*
-
-		if(controller.left == 1){
-			if(visual_map.eq_x * visual_map.ratio + visual_map.x > 0){
-				context.translate(visual_map.scroll_speed, 0)
-				visual_map.x -= visual_map.scroll_speed;
-			}
-			if(visual_map.x < 0){
-				visual_map.x += visual_map.ratio;
-				visual_map.eq_x = Math.max(visual_map.eq_x - 1, 0);
-			}
-		}
-		if(controller.right == 1){
-			if(visual_map.eq_x < map_utilities.limit_x-visual_map.width){
-				context.translate(-visual_map.scroll_speed, 0);
-				visual_map.x += visual_map.scroll_speed;
-			}
-			
-			if(visual_map.x >= visual_map.ratio){
-				visual_map.x -=  visual_map.ratio;
-				visual_map.eq_x = Math.min(visual_map.eq_x + 1, map_utilities.limit_x-visual_map.width);
-			}	
-		}
-		if(controller.up == 1){
-			if(visual_map.eq_y * visual_map.ratio + visual_map.y > 0){
-				context.translate(0, visual_map.scroll_speed)
-				visual_map.y -= visual_map.scroll_speed;
-			}
-			if(visual_map.y < 0){
-				visual_map.y += visual_map.ratio;
-				visual_map.eq_y = Math.max(visual_map.eq_y - 1, 0);
-			}
-		}
-		if(controller.down == 1){
-			if(visual_map.eq_y < map_utilities.limit_y-visual_map.height){
-				context.translate(0, -visual_map.scroll_speed);
-				visual_map.y += visual_map.scroll_speed;
-			}
-			
-			if(visual_map.y >= visual_map.ratio){
-				visual_map.y -=  visual_map.ratio;
-				visual_map.eq_y = Math.min(visual_map.eq_y + 1, map_utilities.limit_y-visual_map.height);
-			}	
-		}
-		
-		if(controller.left == 0 && controller.right == 0){
-			ref.speed_x = 0;
-		}
-		if(controller.down == 0 && controller.up == 0){
-			ref.speed_y = 0;
-		}
-		*/
 }
 
 // fonction qui obtient un nombre aléatoire entre 0 et limit
@@ -224,102 +172,193 @@ function get_random(limit){
 	return rand;
 }
 
-// fonction qui assure les bords et un chemin tout autour de la map
 
-function create_path(limitL,limitH){
+/* 
+====================================
+CANVAS DE LA CARTE
+Crée la base de la carte, donnant à chaque case une coordonnée X et Y, et un ID référencé dans un index
+====================================
+*/
+function create_map(limitL, limitH){
 	for(i=0; i<limitL; i++){
 		for(j=0; j<limitH; j++){
-			virtual_map[1][Math.min(Math.max(j,1),limitH-2)].space = 1;
-			virtual_map[1][Math.min(Math.max(j,1),limitH-2)].color = "#eeeeee";
-			virtual_map[0][j].space = 0;
-			virtual_map[0][j].color = "#cccccc";
-			
-			virtual_map[limitH-2][Math.min(Math.max(j,1),limitH-2)].space = 1;
-			virtual_map[limitH-2][Math.min(Math.max(j,1),limitH-2)].color = "#eeeeee";
-			virtual_map[limitH-1][j].space = 0;
-			virtual_map[limitH-1][j].color = "#cccccc";
-		}
-		
-		virtual_map[Math.min(i,limitL-2)][1].space = 1;
-		virtual_map[Math.min(i,limitL-2)][1].color = "#eeeeee";
-		virtual_map[i][0].space = 0;
-		virtual_map[i][0].color = "#cccccc";
-		
-		virtual_map[Math.min(i,limitL-2)][limitL-2].space = 1;
-		virtual_map[Math.min(i,limitL-2)][limitL-2].color = "#eeeeee";
-		virtual_map[i][limitL-1].space = 0;
-		virtual_map[i][limitL-1].color = "#cccccc";
-	}
-}
-
-// Créer une carte (début de coordonnée x, début de coordonnée y, largeur de la carte, hauteur de la carte, taux d'aléatoire de la carte)
-
-function create_map(startX, startY, limitL, limitH, tolerance){
-
-	map_utilities.x = get_random(startX);
-	map_utilities.y = get_random(startY);
-	
-	for(i=0; i<limitL; i++){
-		for(j=0; j<limitH; j++){
-			var obj;
-			map_utilities.random = get_random(11);
-			
-			var alea = get_random(30);
-			if(alea<3){
-				obj = get_random(4);
-			}
-			else{
-				obj = 5;
-			}
-			
 			ligne[j] = { 
 				"id" : map_utilities.id , 
 				"x" : map_utilities.x , 
 				"y" : map_utilities.y , 
-				"content" : objects[obj].name , 
-				"mat" : material[map_utilities.random].mat , 
-				"abr" : material[map_utilities.random].abr , 
-				"color" : material[map_utilities.random].color , 
-				"space" : material[map_utilities.random].walk ,
+				"content" : { }
 			};
-			
 			map_index(map_utilities.id,i,j);
-			
 			map_utilities.y += 1;
 			map_utilities.id += 1;
 		}
 		virtual_map[i] = ligne;
-		
 		ligne = [ ]
 		map_utilities.y -= limitH;
 		map_utilities.x += 1;	
 	}
-	
 	map_utilities.id=0;
-	
-	create_path(limitL, limitH);
-	
-	my_character.case_id = virtual_map[1][1].id;
+	map_aleatoire(limitL,limitH);
+	create_path(limitL,limitH);
+}
+
+function set_objects(positionI, positionJ){
+	virtual_map[positionI][positionJ].content = objects[get_random(3)];
 	
 }
 
-// Afficher la carte à l'écran
-				
-function display_map(){
-	context.clearRect(-600, -600, 6000, 6000);
-	for(j=Math.max(visual_map.eq_y-2,0); j<Math.min(visual_map.height+visual_map.eq_y+2,map_utilities.limit_y); j++){
-		for(i=Math.max(visual_map.eq_x-2,0); i<Math.min(visual_map.width+visual_map.eq_x+2,map_utilities.limit_x); i++){
-			// context.beginPath();
-			context.drawImage(images[virtual_map[i][j].space], i * visual_map.ratio, j * visual_map.ratio , visual_map.ratio, visual_map.ratio);
-			// context.fillStyle = virtual_map[i][j].color;
-		    // context.fill();
-		    context.lineWidth = 0;
+
+/* 
+====================================
+CARTE ALEATOIRE
+Fonction qui remplit les cases de la carte avec des murs ou des sols, et ajoute les contenus; le tout aléatoirement
+====================================
+*/
+function map_aleatoire(limitL,limitH){
+	for(g=0; g<(limitL/3); g++){
+		for(h=0; h<(limitH/3); h++){
+			var lol = get_random(3);
+			path.current = h*limitH + g;
+			for(i=(g*3); i<(g*3)+3; i++){
+				for(j=(h*3); j<(h*3)+3; j++){
+					virtual_map[i][j].space = square.left[lol].map[i-(g*3)][j-(h*3)];
+					virtual_map[i][j].material = virtual_map[i][j].space;
+					
+					if(virtual_map[i][j].space == 1){
+						set_objects(i, j)
+					}
+				}
+			}
 		}
 	}
 }
 
-// function qui se déclenche quand on appuie ou relache une touche
 
+/* 
+====================================
+CREATION D'UN CHEMIN
+Fonction qui crée un chemin aléatoire de gauche à droite, et ajoute une sortie à la fin
+====================================
+*/
+function create_path(limitL,limitH){
+	path.currenty = get_random((limitH-6)/3);
+	my_character.case_id = virtual_map[1][(path.currenty*3)+1].id;
+	my_character.eq_x = (path.currentx*3) + 1;
+	my_character.eq_y = (path.currenty*3) + 1;
+	context.translate( 0 , -visual_map.scrolled_y)
+	while(path.currentx < limitL/3){
+		getSens(limitH);
+		for(i=path.currentx*3; i<path.currentx*3+3; i++){
+			for(j=path.currenty*3; j<path.currenty*3+3; j++){
+				virtual_map[i][j].space = path_temp[path.coming][path.going].map[get_random(3)][i-(path.currentx*3)][j-(path.currenty*3)];
+				virtual_map[i][j].material = virtual_map[i][j].space;
+			}
+		}
+		lol = get_random(3);
+		path.currentx += path_temp[path.coming][path.going].horizontal;
+		path.currenty = Math.max(Math.min((path.currenty + path_temp[path.coming][path.going].vertical),((limitH-3)/3)),0);
+		path.coming = path_temp[path.coming][path.going].exit;
+	}
+	
+	
+	for(i=0; i<limitL; i++){
+		virtual_map[i][0].space = 0;
+		virtual_map[i][limitH-1].space = 0;
+		virtual_map[i][0].material = 0;
+		virtual_map[i][limitH-1].material = 0;
+	}
+	for(j=0; j<limitH; j++){
+		virtual_map[0][j].space = 0;
+		virtual_map[limitL-1][j].space = 0;
+		virtual_map[0][j].material = 0;
+		virtual_map[limitL-1][j].material = 0;
+	}
+	
+	virtual_map[(path.currentx-1)*3 + 1][(path.currenty)*3 + 1].material = 2;
+	virtual_map[(path.currentx-1)*3 + 2][(path.currenty)*3 + 1].material = 3;
+	
+	end.x = virtual_map[(path.currentx-1)*3 + 1][(path.currenty)*3 + 1].x;
+	end.y = virtual_map[(path.currentx-1)*3 + 1][(path.currenty)*3 + 1].y;
+}
+
+
+function getSens(limitH){
+	if(path.currenty >= (limitH-3)/3 && path.coming == 1){
+		path.going = sens_when_down[0];
+	}
+	else if(path.currenty >= (limitH-3)/3 && path.coming == 0){
+		path.going = 2;
+	}
+	else if(path.currenty == 0 && path.coming == 0){
+		path.going = sens_dispo[path.coming][1];
+	}
+	else{
+		path.going = sens_dispo[path.coming][get_random(3)];
+	}
+	if(path.currentx == 0 && path.currenty == 0){
+		path.going = 0;
+	}
+}
+
+
+/* 
+====================================
+AFFICHAGE ET SCROLL DE LA CARTE
+Fonction qui affiche la carte, et scroll si besoin est
+====================================
+*/
+function scroll_map(){
+	visual_map.eq_x = Math.min( Math.max( my_character.eq_x - visual_map.width/2 , 0 ) , map_utilities.limit_x - visual_map.width);
+	visual_map.eq_y = Math.min( Math.max( my_character.eq_y - visual_map.height/2 , 0 ) , map_utilities.limit_y - visual_map.height + 2);
+	
+	if(my_character.eq_x >= visual_map.width/2 && my_character.eq_x <= map_utilities.limit_x - visual_map.width/2 - 1){
+		visual_map.x = my_character.x
+	}
+	else{
+		visual_map.x = 0;
+	}
+	if(my_character.eq_y >= visual_map.height/2 && my_character.eq_y <= map_utilities.limit_y - visual_map.height/2 + 1){
+		visual_map.y = my_character.y
+	}
+	else{
+		visual_map.y = 0;
+	}
+	visual_map.to_scroll_x = visual_map.scrolled_x - (visual_map.eq_x * visual_map.ratio + visual_map.x);
+	visual_map.to_scroll_y = visual_map.scrolled_y - (visual_map.eq_y * visual_map.ratio + visual_map.y);
+	
+	context.translate( visual_map.to_scroll_x , visual_map.to_scroll_y);
+	visual_map.scrolled_x = visual_map.eq_x * visual_map.ratio + visual_map.x;
+	visual_map.scrolled_y = visual_map.eq_y * visual_map.ratio + visual_map.y;
+}
+function display_map(){
+	scroll_map();
+	context.clearRect(-6000, -6000, 6000, 6000);
+	for(j=Math.max(visual_map.eq_y-2,0); j<Math.min(visual_map.height+visual_map.eq_y+2,map_utilities.limit_y); j++){
+		for(i=Math.max(visual_map.eq_x-2,0); i<Math.min(visual_map.width+visual_map.eq_x+2,map_utilities.limit_x); i++){
+			context.drawImage(virtual_map.sprite, 100 * virtual_map[i][j].material, 0 , 100 , 100 ,i * visual_map.ratio, j * visual_map.ratio , visual_map.ratio, visual_map.ratio);
+			context.drawImage(map_objects.sprite, 30 * virtual_map[i][j].content.look, 0 , 30 , 30 ,i * visual_map.ratio + 10, j * visual_map.ratio , 30 * virtual_map[i][j].content.size, 30 * virtual_map[i][j].content.size);
+		}
+	}
+}
+
+
+/* 
+====================================
+AFFICHAGE DU PERSONNAGE
+Fonction qui affiche le personnage
+====================================
+*/
+function display_character(){
+	context.drawImage( my_character.sprite , 30 * my_character.frame, 60 * my_character.sens , 30 , 60 , my_character.eq_x*visual_map.ratio + my_character.x, my_character.eq_y * visual_map.ratio + my_character.y , my_character.width * visual_map.ratio , my_character.height * visual_map.ratio);
+}
+
+
+/* 
+====================================
+CONTROLES DU PERSONNAGE
+Fonction qui gère les controles du personnage
+====================================
+*/
 function keyDown(e){
 	var code = e.keyCode ? e.keyCode : e.which;
 	if (code == 38){
@@ -354,18 +393,8 @@ function keyUp(e){
 	}
 }
 
-// affiche personnage
-
-function display_character(){
-	context.beginPath();
-	context.rect((my_character.eq_x*visual_map.ratio) + my_character.x, my_character.eq_y * visual_map.ratio + my_character.y, my_character.width * visual_map.ratio, my_character.height * visual_map.ratio);
-	context.fillStyle = "red";
-    context.fill();
-    context.lineWidth = 0;
-}
 
 // affiche les infos
-
 function show_info(){
 	$(".cor_x").html(my_character.eq_x);
 	$(".cor_y").html(my_character.eq_y);
@@ -374,8 +403,11 @@ function show_info(){
 	$(".v_y").html(my_character.current_speed_y);
 	$(".sm_x").html(my_character.x);
 	$(".sm_y").html(my_character.y);
-	$(".content").html(virtual_map[index[my_character.case_id].i][index[my_character.case_id].j].content);
-	$(".map_x").html(visual_map.x);
+	$(".content").html(virtual_map[index[my_character.case_id].i][index[my_character.case_id].j].content.name);
+	$(".map_x").html(visual_map.eq_x);
+	$(".map_y").html(visual_map.eq_y);
+	$(".end_x").html(end.x);
+	$(".end_y").html(end.y);
 }
 
 // ralentir le perso en x
