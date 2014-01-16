@@ -16,7 +16,7 @@ body{
 	position: relative;
 	margin:20px auto;
 	border: solid #000 1px;
-	z-index: + 1;
+	z-index: +1;
 }
 
 .case{

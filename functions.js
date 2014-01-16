@@ -144,11 +144,11 @@ function move(object){
 			object.current_speed_y = 0;
 		}
 		object.next_case = virtual_map[index[object.case_id].i][index[object.case_id].j+1];
-		if((object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j+1].space==1) || (object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j+1].space==0 && object.x <= visual_map.ratio-(object.width/2 * visual_map.ratio))){
+		if(((object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j+1].space==1) || (object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j+1].space==0 && object.x <= visual_map.ratio-(object.width/2 * visual_map.ratio))) && (virtual_map[index[object.case_id].i-1][index[object.case_id].j+1].space!=0 || virtual_map[index[object.case_id].i-1][index[object.case_id].j+1].space==0 && object.x > object.width/2*visual_map.ratio-1)){
 			object.current_speed_y = Math.min(object.current_speed_y + 1, object.max_speed);
 			object.y += object.current_speed_y;
 		}
-		else if (object.next_case.space == 0 || (object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j+1].space==0 && object.x > visual_map.ratio-(object.width/2*visual_map.ratio))){
+		else if (object.next_case.space == 0 || (object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j+1].space==0 && object.x > visual_map.ratio-(object.width/2*visual_map.ratio)) || (object.next_case.space == 1 && virtual_map[index[object.case_id].i-1][index[object.case_id].j+1].space==0 && object.x < object.width/2*visual_map.ratio-1)){
 			object.current_speed_y = Math.min(object.current_speed_y + 1, object.max_speed);
 			object.y = Math.min(object.y + object.current_speed_y, visual_map.ratio - object.height/2 * visual_map.ratio);
 		}
@@ -167,13 +167,13 @@ function move(object){
 			object.current_speed_y = 0;
 		}
 		object.next_case = virtual_map[index[object.case_id].i][index[object.case_id].j-1];
-		if((object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j-1].space==1) || (object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j-1].space==0 && object.x <= visual_map.ratio-(object.width/2*visual_map.ratio))){
+		if(((object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j-1].space==1) || (object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j-1].space==0 && object.x <= visual_map.ratio-(object.width/2*visual_map.ratio))) && (virtual_map[index[object.case_id].i-1][index[object.case_id].j-1].space!=0 || virtual_map[index[object.case_id].i-1][index[object.case_id].j-1].space==0 && object.x > object.width/2*visual_map.ratio-1)){
 			object.current_speed_y = Math.max(object.current_speed_y - 1, -object.max_speed);
 			object.y += object.current_speed_y;
 		}
-		else if (object.next_case.space == 0 || (object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j-1].space==0 && object.x > visual_map.ratio-(object.width/2*visual_map.ratio))){
+		else if (object.next_case.space == 0 || (object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j-1].space==0 && object.x > visual_map.ratio-(object.width/2*visual_map.ratio)) || (object.next_case.space == 1 && virtual_map[index[object.case_id].i-1][index[object.case_id].j-1].space==0 && object.x < object.width/2*visual_map.ratio-1)){
 			object.current_speed_y = Math.max(object.current_speed_y - 1, -object.max_speed);
-			object.y = Math.max(object.y + object.current_speed_y, 0 + object.height/2 *visual_map.ratio);
+			object.y = Math.max(object.y + object.current_speed_y, 0);
 		}
 		if(object.y < 0){
 			object.y += visual_map.ratio;
@@ -254,13 +254,13 @@ Fonction qui remplit les cases de la carte avec des murs ou des sols, et ajoute 
 ====================================
 */
 function map_aleatoire(limitL,limitH){
-	for(g=0; g<(limitL/3); g++){
-		for(h=0; h<(limitH/3); h++){
+	for(g=0; g<(limitL/5); g++){
+		for(h=0; h<(limitH/5); h++){
 			var lol = get_random(3);
 			path.current = h*limitH + g;
-			for(i=(g*3); i<(g*3)+3; i++){
-				for(j=(h*3); j<(h*3)+3; j++){
-					virtual_map[i][j].space = square.left[lol].map[i-(g*3)][j-(h*3)];
+			for(i=(g*5); i<(g*5)+5; i++){
+				for(j=(h*5); j<(h*5)+5; j++){
+					virtual_map[i][j].space = square.left[lol].map[i-(g*5)][j-(h*5)];
 					virtual_map[i][j].material = virtual_map[i][j].space;
 					
 					if(virtual_map[i][j].space == 1){
@@ -280,22 +280,22 @@ Fonction qui crée un chemin aléatoire de gauche à droite, et ajoute une sorti
 ====================================
 */
 function create_path(limitL,limitH){
-	path.currenty = get_random((limitH-6)/3); // définit à quelle hauteur le chemin va commencer
-	my_character.case_id = virtual_map[1][(path.currenty*3)+1].id; // place le personnage à cette hauteur (pour qu'il se toruve bien sur le chemin au début !)
-	my_character.eq_x = (path.currentx*3) + 1;
-	my_character.eq_y = (path.currenty*3) + 1;
+	path.currenty = get_random((limitH-10)/5); // définit à quelle hauteur le chemin va commencer
+	my_character.case_id = virtual_map[1][(path.currenty*5)+1].id; // place le personnage à cette hauteur (pour qu'il se toruve bien sur le chemin au début !)
+	my_character.eq_x = (path.currentx*5) + 1;
+	my_character.eq_y = (path.currenty*5) + 1;
 	context.translate( 0 , -visual_map.scrolled_y)
-	while(path.currentx < limitL/3){
+	while(path.currentx < limitL/5){
 		getSens(limitH); // appel à la fonction getSens(), qui décide les possibilités de chemin
-		for(i=path.currentx*3; i<path.currentx*3+3; i++){
-			for(j=path.currenty*3; j<path.currenty*3+3; j++){
-				virtual_map[i][j].space = path_temp[path.coming][path.going].map[get_random(3)][i-(path.currentx*3)][j-(path.currenty*3)];
+		for(i=path.currentx*5; i<path.currentx*5+5; i++){
+			for(j=path.currenty*5; j<path.currenty*5+5; j++){
+				virtual_map[i][j].space = path_temp[path.coming][path.going].map[i-(path.currentx*5)][j-(path.currenty*5)];
 				virtual_map[i][j].material = virtual_map[i][j].space;
 			}
 		}
 		lol = get_random(3);
 		path.currentx += path_temp[path.coming][path.going].horizontal;
-		path.currenty = Math.max(Math.min((path.currenty + path_temp[path.coming][path.going].vertical),((limitH-3)/3)),0);
+		path.currenty = Math.max(Math.min((path.currenty + path_temp[path.coming][path.going].vertical),((limitH-5)/5)),0);
 		path.coming = path_temp[path.coming][path.going].exit;
 	}
 	
@@ -313,11 +313,11 @@ function create_path(limitL,limitH){
 		virtual_map[limitL-1][j].material = 0;
 	}
 	
-	virtual_map[(path.currentx-1)*3 + 1][(path.currenty)*3 + 1].material = 2;
-	virtual_map[(path.currentx-1)*3 + 2][(path.currenty)*3 + 1].material = 3;
+	virtual_map[(path.currentx-1)*5 + 3][(path.currenty)*5 + 1].material = 2;
+	virtual_map[(path.currentx-1)*5 + 4][(path.currenty)*5 + 1].material = 3;
 	
-	end.x = virtual_map[(path.currentx-1)*3 + 1][(path.currenty)*3 + 1].x;
-	end.y = virtual_map[(path.currentx-1)*3 + 1][(path.currenty)*3 + 1].y;
+	end.x = virtual_map[(path.currentx-1)*5 + 3][(path.currenty)*5 + 1].x;
+	end.y = virtual_map[(path.currentx-1)*5 + 3][(path.currenty)*5 + 1].y;
 }
 
 
@@ -328,10 +328,10 @@ Fonction qui donne les possibilités de chemin
 ====================================
 */
 function getSens(limitH){
-	if(path.currenty >= (limitH-3)/3 && path.coming == 1){
+	if(path.currenty >= (limitH-5)/5 && path.coming == 1){
 		path.going = sens_when_down[0];
 	}
-	else if(path.currenty >= (limitH-3)/3 && path.coming == 0){
+	else if(path.currenty >= (limitH-5)/5 && path.coming == 0){
 		path.going = 2;
 	}
 	else if(path.currenty == 0 && path.coming == 0){
