@@ -4,9 +4,8 @@
 		<title>Labyrinthe</title>
 		<link rel="stylesheet" href="style.css" title="style" type="text/css" media="screen" charset="utf-8">
 		<script type="text/javascript" src="js/jquery.js" ></script>
-		<script type="text/javascript" src="js/variables.js" ></script>
-		<script type="text/javascript" src="functions.js" ></script>
 		<script type="text/javascript" src="jsons.js" ></script>
+		<script type="text/javascript" src="functions.js" ></script>
 			</head>
 	<body onkeydown="keyDown(event)" onkeyup="keyUp(event)">
 		<div id = "container">
@@ -14,22 +13,84 @@
 			</canvas>
 			<div class="results"></div>
 			<div class="interface">
-				<div class="trigger">
+				<button class="trigger" onClick="init()">
 					Créer un Labyrinthe...
-				</div>
+				</button>
 				<div class="info">
-					<table>
-						<tr>
-							<td>GOLD</td><td class="sep">:</td><td class="gold results"></td>
-						</tr>
-					</table>
 				</div>
+				<button id="pause_trigger" onClick="openInventory()">
+					Pause
+				</button>
+				<button id="stop_pause" onClick="closeInventory()">
+					Unpause
+				</button>
+			</div>
+			<div id="pause">
+			
 			</div>
 		</div>
 		<script type="text/javascript">
 			// initialise le Canvas
 			var canvas = document.getElementById('Canvas');
 			var context = canvas.getContext('2d');
+			
+			function createCharacter(){
+				this.name = "Isildur";
+				this.x = 0.5 * visual_map.ratio;
+				this.y = 0.5 * visual_map.ratio;
+				this.current_speed_x = 0;
+				this.current_speed_y = 0;
+				this.max_speed = 4;
+				this.case_id = "";
+				this.next_case = "";
+				this.eq_x = 1;
+				this.eq_y = 1;
+				this.width = 0.4;
+				this.height = 0.8;
+				this.sprite = "";
+				this.start_frame = 0;
+				this.frame = 0;
+				this.max_frame = 15;
+				this.sens = 0;
+				this.inventaire = { "gold" : 0 };
+				
+				this.animation = {
+					"stop" : [0,15] ,
+					"walk" : [16,35] ,
+					"attack" : [36,43]
+ 				}
+ 				
+				this.hitbox = [-this.width/2 * visual_map.ratio, -this.height/2 * visual_map.ratio, this.width * visual_map.ratio, this.height * visual_map.ratio];
+				
+				this.displayCharacter = displayCharacter;
+				function displayCharacter(){
+					context.drawImage( this.sprite , 30 * (this.frame + this.start_frame), 54 * this.sens , 30 , 54 , this.eq_x*visual_map.ratio + this.x - this.width/2 * visual_map.ratio, this.eq_y * visual_map.ratio + this.y - this.height/2 * visual_map.ratio, this.width * visual_map.ratio , this.height * visual_map.ratio);
+				};
+				
+				this.sensX = 1;
+				this.sensY = 0;
+				
+				this.attack = {
+					"hitting" : false,
+					"hitbox" : [this.width/2 * visual_map.ratio,-this.height/2 * visual_map.ratio,this.width * visual_map.ratio,this.height * visual_map.ratio] ,
+					"damage" : 1 ,
+					"state" : 0 ,
+					"length" : /*(this.animation.attack[1] - this.animation.attack[0]) * 4*/ 24 ,
+					"hit" : false 
+ 				};
+				this.striking = striking;
+				function striking(){
+					context.beginPath();
+					context.fillStyle = "red";
+					context.fillRect( this.eq_x * visual_map.ratio + this.x+this.attack.hitbox[0] , this.eq_y * visual_map.ratio + this.y+this.attack.hitbox[1] , this.attack.hitbox[2]/this.attack.length * this.attack.state , this.attack.hitbox[3]);
+					context.closePath();
+				}
+				
+				this.setHitbox = setHitbox;
+				function setHitbox(startx,starty,width,height){
+					this.attack.hitbox = [startx,starty,width,height];
+				}
+			};
 			
 			
 		    
@@ -39,15 +100,15 @@
 					"x" : 0 ,
 					"y" : 0 ,
 					"random" : 0 ,
-					"limit_x" : 60 ,
-					"limit_y" : 30 ,
+					"limit_x" : 90 ,
+					"limit_y" : 50 ,
 				},
 				visual_map = { // informations du rendu du jeu (taille de la fenêtre, ratio, etc...)
 					"ratio" :55,
 					"x" : 0 ,
 					"y" : 0 ,
 					"width" : 16 ,
-					"height" : 14 ,
+					"height" : 12 ,
 					"eq_x" : 0 ,
 					"eq_y" : 0 ,
 					"scrolled_x" : 0 ,
@@ -60,29 +121,7 @@
 				virtual_map = [ ], // Variable qui contiendra toutes les informations de la carte
 				ligne = [ ], // variable utile lors de la création de la carte
 				index = [ ], // index des cases de la carte qui sera utile pour retrouver les cases par leur ID
-				my_character = { // variable contenant les informations du personnage
-					"name" : "Isildur" , 
-					"x" : 20 , 
-					"y" : 20 ,
-					"current_speed_x" : 0 ,
-					"current_speed_y" : 0 ,
-					"max_speed" : 3 , 
-					"case_id" : "" , 
-					"next_case" : "" ,
-					"eq_x" : 1 ,
-					"eq_y" : 1 ,
-					"width" : 0.4 , 
-					"height" : 0.8 ,
-					"scroll_x" : 0 ,
-					"scroll_y" : 0 ,
-					"sprite" : "" ,
-					"frame" : 0 , 
-					"max_frame" : 4,
-					"sens" : 0 ,
-					"inventaire" : {
-							"gold" : 0 
-						}
-				},
+				my_character = new createCharacter(),
 				controller = { // Variable controllers
 					"left" : 0 ,
 					"up" : 0 ,
@@ -102,17 +141,47 @@
 				map_objects = { // Variable qui contiendra les informations concernant les objets de la carte (pépites d'or, etc...)
 					"sprite" : "" 
 				},
-				GameHeart; // Variable pour le setInterval du moteur du jeu
+				frame_rate = 0,
+				GameHeart, // Variable pour le setInterval du moteur du jeu
+				bot = {
+					"eq_x" : 0 ,
+					"eq_y" : 0 ,
+					"x" : 0 ,
+					"y" : 0 ,
+					"state" : false,
+					"life" : 5 ,
+					"ab_x" : 0 ,
+					"ab_y" : 0 ,
+					"hitbox" : [0,0,60,60]
+				},
+				checkLeftTop = [0,0],
+				checkLeftBottom = [0,0],
+				checkRightTop = [0,0],
+				checkRightBottom = [0,0];
+				function load_sprites(){
+					virtual_map.sprite = new Image();
+					virtual_map.sprite.src = "img/map_sprite.png";
+				
+					my_character.sprite = new Image();
+					my_character.sprite.src = "img/sprite.png";
+					
+					map_objects.sprite = new Image();
+					map_objects.sprite.src = "img/objects_sprite.png";
+					
+					$(".trigger").fadeIn();
+				}
+				
+				function init(){
+					create_map(map_utilities.limit_x,map_utilities.limit_y); // Crée la carte
+					GameHeart = setInterval(function(){engine()},1000/60); // Commence le moteur du jeu
+					$(".trigger").css("display" , "none"); // Cache le bouton de démarrage
+					//alert(my_character.toSource() + " | " + test_character.toSource())
+				}
+				
 				
 			// Création de la map et Lancement du jeu
 			$(document).ready(function(){
-				$(".trigger").click(function(){
-					load_sprites();	// Charge les sprites
-					create_map(map_utilities.limit_x,map_utilities.limit_y); // Crée la carte
-					set_frames(); // Commence le moteur d'animations
-					GameHeart = setInterval(function(){engine()},1000/60); // Commence le moteur du jeu
-					$(".trigger").css("display" , "none"); // Cache le bouton de démarrage
-				});
+				load_sprites();	// Charge les sprites
 			});
 		</script>
 	</body>

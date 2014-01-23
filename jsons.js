@@ -23,9 +23,10 @@ var square = {
 
 // sens à disposition pour le chemin aléatoire
 var sens_dispo = [
-	[ 0 , 1 , 2] ,
-	[ 0 , 1 , 1 ] ,
-	[ 0 , 1 , 1 ]
+	[ 0 , 1 , 2 ] ,
+	[ 1 , 1 , 0 ] ,
+	[ 2 , 2 , 0 ] ,
+	[ 0 , 2]
 ];
 var sens_when_down = [ 0 , 2 ];
 
@@ -44,8 +45,9 @@ var path_temp = [
 	] ,
 	
 	[
-		{ "map" : [[0,0,0,0,0],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[0,0,0,0,0]] , "exit" : 2 , "coming" : "down" , "horizontal" : 0 , "vertical" : -1 } ,
-		{ "map" : [[0,0,0,0,0],[0,1,1,1,1],[0,1,1,1,1],[0,1,1,1,1],[0,1,1,1,0]] , "exit" : 0 , "coming" : "down" , "horizontal" : 1 , "vertical" : 0 } 
+		{ "map" : [[0,0,0,0,0],[0,1,1,1,1],[0,1,1,1,1],[0,1,1,1,1],[0,1,1,1,0]] , "exit" : 0 , "coming" : "down" , "horizontal" : 1 , "vertical" : 0 } ,
+		{ } ,
+		{ "map" : [[0,0,0,0,0],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[0,0,0,0,0]] , "exit" : 2 , "coming" : "down" , "horizontal" : 0 , "vertical" : -1 } 
 	] ,
 	
 	[

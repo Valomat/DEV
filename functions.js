@@ -4,11 +4,13 @@ MOTEUR DU JEU
 ====================================
 */
 function engine(){
+	set_frames();
 	move(my_character); // check les déplacements du perso
 	collect(my_character); // Gère le rammassage d'objets
+	attack();
 	show_info(); // affiche la quantité d'or que le joueur possède
 	display_map(); // affiche la carte
-	display_character(); // affiche le personnage
+	displayElements(); // affiche le personnage
 	check_end(); // Vérifie si le joueur a atteint la sortie
 }
 
@@ -33,24 +35,19 @@ LOAD & SET SPRITES
 Fonction qui assigne les sprites chargées au différents objets du jeu
 ====================================
 */
-function load_sprites(){
-	virtual_map.sprite = new Image();
-	virtual_map.sprite.src = "img/map_sprite.png";
-
-	my_character.sprite = new Image();
-	my_character.sprite.src = "img/sprite.png";
-	
-	map_objects.sprite = new Image();
-	map_objects.sprite.src = "img/objects_sprite.png";
-}
 function set_frames(){
-	if( my_character.frame < my_character.max_frame ){
-		my_character.frame += 1;
+	if(frame_rate == 0){
+		if( my_character.frame < my_character.max_frame - my_character.start_frame ){
+			my_character.frame += 1;
+		}
+		else{
+			my_character.frame = 0;
+		}
 	}
-	else{
-		my_character.frame = 0;
+	frame_rate += 1;
+	if(frame_rate == 4){
+		frame_rate = 0;
 	}
-	setTimeout(set_frames, 1000/12);
 }
 
 
@@ -84,111 +81,169 @@ DEPLACEMENTS
 Fonction dégueulasse qui gère les déplacements du personnage et les collisions, appelée à 60hertz par la fonction engine();
 ====================================
 */
+function getCasePosition(AbsX, AbsY){
+	var posX = Math.floor( (AbsX-1) / (visual_map.ratio) );
+	var posY = Math.floor( (AbsY-1) / (visual_map.ratio) );
+	return [posX,posY];
+}
+
 function move(object){
 	// si flèche droite enfoncée
 	if(controller.left == 0 && controller.right == 0 && controller.down == 0 && controller.up == 0){
-		object.max_frame = 0;
+		object.start_frame = object.animation.stop[0];
+		object.max_frame = object.animation.stop[1];
 	}
 	else{
-		object.max_frame = 4;
+		object.start_frame = object.animation.walk[0];
+		object.max_frame = object.animation.walk[1];
 	}
+	var oCC = getCasePosition( object.eq_x * visual_map.ratio + object.x , object.eq_y * visual_map.ratio + object.y );
+	object.case_id = virtual_map[oCC[0]][oCC[1]].id
 	
 	if(controller.right == 1){
 		if(object.current_speed_x<0){
 			object.current_speed_x = 0;
 		}
 		object.current_speed_x = Math.min(object.current_speed_x + 1,object.max_speed);
-		object.next_case = virtual_map[index[object.case_id].i+1][index[object.case_id].j];
-		if((object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j+1].space==1) || (object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j+1].space==0 && object.y <= visual_map.ratio-(object.height/2*visual_map.ratio))){
+		checkRightTop = getCasePosition( (object.eq_x * visual_map.ratio + object.x + object.current_speed_x + object.hitbox[0] + object.hitbox[2]) , (object.eq_y * visual_map.ratio + object.y + object.hitbox[1]) );
+		checkRightBottom = getCasePosition( (object.eq_x * visual_map.ratio + object.x + object.current_speed_x + object.hitbox[0] + object.hitbox[2]) , (object.eq_y * visual_map.ratio + object.y + object.hitbox[1] + object.hitbox[3]) );
+		if( virtual_map[checkRightTop[0]][checkRightTop[1]].space == 1 && virtual_map[checkRightBottom[0]][checkRightBottom[1]].space == 1 ){
 			object.x += object.current_speed_x;
 		}
-		else if (object.next_case.space == 0  || (object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j+1].space==0 && object.y > visual_map.ratio-(object.height/2*visual_map.ratio))){
-			object.current_speed_x = Math.min(object.current_speed_x + 1,object.max_speed);
-			object.x = Math.min(object.x + object.current_speed_x, visual_map.ratio - object.width/2 * visual_map.ratio);
-		}
-		if(object.x >= visual_map.ratio){
-			object.x -= visual_map.ratio;
-			object.eq_x += 1;
-			object.case_id = object.next_case.id;
+		else{
+			object.x = Math.min( object.x + object.current_speed_x , visual_map.ratio -1 + object.hitbox[0] );
 		}
 		object.sens = 0;
+		my_character.sensX = 1;
 	}
-	
-	// si flèche gauche enfoncée
-	
 	if(controller.left == 1){
 		if(object.current_speed_x>0){
 			object.current_speed_x = 0;
 		}
-		object.next_case = virtual_map[index[object.case_id].i-1][index[object.case_id].j];
-		if((object.next_case.space == 1 && virtual_map[index[object.case_id].i-1][index[object.case_id].j+1].space==1) || (object.next_case.space == 1 && virtual_map[index[object.case_id].i-1][index[object.case_id].j+1].space==0 && object.y <= visual_map.ratio-(object.height/2*visual_map.ratio))){
-			object.current_speed_x = Math.max(object.current_speed_x - 1, -object.max_speed);
+		object.current_speed_x = Math.max(object.current_speed_x - 1, -object.max_speed);
+		checkLeftTop = getCasePosition( (object.eq_x * visual_map.ratio + object.x + object.current_speed_x + object.hitbox[0]) , (object.eq_y * visual_map.ratio + object.y + object.hitbox[1]) );
+		checkLeftBottom = getCasePosition( (object.eq_x * visual_map.ratio + object.x + object.current_speed_x + object.hitbox[0]) , (object.eq_y * visual_map.ratio + object.y + object.hitbox[1] + object.hitbox[3]) );
+		if( virtual_map[checkLeftTop[0]][checkLeftTop[1]].space == 1 && virtual_map[checkLeftBottom[0]][checkLeftBottom[1]].space == 1 ){
 			object.x += object.current_speed_x;
 		}
-		else if (object.next_case.space == 0 || (object.next_case.space == 1 && virtual_map[index[object.case_id].i-1][index[object.case_id].j+1].space==0 && object.y > visual_map.ratio-(object.height/2*visual_map.ratio))){
-			object.current_speed_x = Math.max(object.current_speed_x - 1, -object.max_speed);
-			object.x = Math.max(object.x + object.current_speed_x, 0 + object.width/2 * visual_map.ratio);
-		}
-		if(object.x < 0){
-			object.x += visual_map.ratio;
-			object.eq_x -= 1;
-			object.case_id = object.next_case.id;
+		else{
+			object.x = Math.max( object.x + object.current_speed_x , 0 - object.hitbox[0] + 1);
 		}
 		object.sens = 1;
+		my_character.sensX = -1;
 	}
-	
-	// si flèche bas enfoncée
-	
 	if(controller.down == 1){
 		if(object.current_speed_y < 0){
 			object.current_speed_y = 0;
 		}
-		object.next_case = virtual_map[index[object.case_id].i][index[object.case_id].j+1];
-		if(((object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j+1].space==1) || (object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j+1].space==0 && object.x <= visual_map.ratio-(object.width/2 * visual_map.ratio))) && (virtual_map[index[object.case_id].i-1][index[object.case_id].j+1].space!=0 || virtual_map[index[object.case_id].i-1][index[object.case_id].j+1].space==0 && object.x > object.width/2*visual_map.ratio-1)){
-			object.current_speed_y = Math.min(object.current_speed_y + 1, object.max_speed);
-			object.y += object.current_speed_y;
+		object.current_speed_y = Math.min(object.current_speed_y + 1, object.max_speed);
+		checkLeftBottom = getCasePosition( (object.eq_x * visual_map.ratio + object.x + object.hitbox[0]) , (object.eq_y * visual_map.ratio + object.y + object.current_speed_y + object.hitbox[1] + object.hitbox[3]) );
+		checkRightBottom = getCasePosition( (object.eq_x * visual_map.ratio + object.x + object.hitbox[0] + object.hitbox[2]) , (object.eq_y * visual_map.ratio + object.y + object.current_speed_y + object.hitbox[1] + object.hitbox[3]) );
+		if( virtual_map[checkLeftBottom[0]][checkLeftBottom[1]].space == 1 && virtual_map[checkRightBottom[0]][checkRightBottom[1]].space == 1 ){
+			object.y += object.current_speed_y;	
 		}
-		else if (object.next_case.space == 0 || (object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j+1].space==0 && object.x > visual_map.ratio-(object.width/2*visual_map.ratio)) || (object.next_case.space == 1 && virtual_map[index[object.case_id].i-1][index[object.case_id].j+1].space==0 && object.x < object.width/2*visual_map.ratio-1)){
-			object.current_speed_y = Math.min(object.current_speed_y + 1, object.max_speed);
-			object.y = Math.min(object.y + object.current_speed_y, visual_map.ratio - object.height/2 * visual_map.ratio);
+		else{
+			object.y = Math.min( object.y + object.current_speed_y , visual_map.ratio + object.hitbox[1] - 1);
 		}
-		
-		if(object.y >= visual_map.ratio){
-			object.y -= visual_map.ratio;
-			object.eq_y += 1;
-			object.case_id = object.next_case.id; 
-		}
+		my_character.sensY = 1;
 	}
-	
-	// si flèche haut enfoncée
-	
 	if(controller.up == 1){
 		if(object.current_speed_y > 0){
 			object.current_speed_y = 0;
 		}
-		object.next_case = virtual_map[index[object.case_id].i][index[object.case_id].j-1];
-		if(((object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j-1].space==1) || (object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j-1].space==0 && object.x <= visual_map.ratio-(object.width/2*visual_map.ratio))) && (virtual_map[index[object.case_id].i-1][index[object.case_id].j-1].space!=0 || virtual_map[index[object.case_id].i-1][index[object.case_id].j-1].space==0 && object.x > object.width/2*visual_map.ratio-1)){
-			object.current_speed_y = Math.max(object.current_speed_y - 1, -object.max_speed);
-			object.y += object.current_speed_y;
+		object.current_speed_y = Math.max(object.current_speed_y - 1, -object.max_speed);
+		checkLeftTop = getCasePosition( (object.eq_x * visual_map.ratio + object.x + object.hitbox[0]) , (object.eq_y * visual_map.ratio + object.y + object.current_speed_y + object.hitbox[1]) );
+		checkRightTop = getCasePosition( (object.eq_x * visual_map.ratio + object.x + object.hitbox[0] + object.hitbox[2]) , (object.eq_y * visual_map.ratio + object.y + object.current_speed_y + object.hitbox[1]) );
+		if( virtual_map[checkLeftTop[0]][checkLeftTop[1]].space == 1 && virtual_map[checkRightTop[0]][checkRightTop[1]].space == 1 ){
+			object.y += object.current_speed_y;	
 		}
-		else if (object.next_case.space == 0 || (object.next_case.space == 1 && virtual_map[index[object.case_id].i+1][index[object.case_id].j-1].space==0 && object.x > visual_map.ratio-(object.width/2*visual_map.ratio)) || (object.next_case.space == 1 && virtual_map[index[object.case_id].i-1][index[object.case_id].j-1].space==0 && object.x < object.width/2*visual_map.ratio-1)){
-			object.current_speed_y = Math.max(object.current_speed_y - 1, -object.max_speed);
-			object.y = Math.max(object.y + object.current_speed_y, 0);
+		else{
+			object.y = Math.max( object.y + object.current_speed_y , 0 - object.hitbox[1] + 1);
 		}
-		if(object.y < 0){
-			object.y += visual_map.ratio;
-			object.eq_y -= 1;
-			object.case_id = object.next_case.id;
-		}
+		my_character.sensY = -1;
+	}
+	
+	if(object.x >= visual_map.ratio){
+		object.x -= visual_map.ratio;
+		object.eq_x += 1;
+	}
+	if(object.x < 0){
+		object.x += visual_map.ratio;
+		object.eq_x -= 1;
+	}
+	if(object.y >= visual_map.ratio){
+		object.y -= visual_map.ratio;
+		object.eq_y += 1;
+	}
+	if(object.y < 0){
+		object.y += visual_map.ratio;
+		object.eq_y -= 1;
 	}
 	
 	// appel au fonctions pour ralentir le perso
 	if(controller.left == 0 && controller.right == 0){
+		my_character.sensX = 0;
 		slowDownX();
 	}
 	if(controller.down == 0 && controller.up == 0){
+		my_character.sensY = 0;
 		slowDownY();
 	}
+}
+
+function attack(){
+	if(my_character.attack.hitting == false && controller.attack == 1){
+		my_character.attack.hitting = true;
+	}
+	
+	
+	if(my_character.sensX == 1 && my_character.sensY == 0){
+		my_character.setHitbox(my_character.width/2 * visual_map.ratio,-my_character.height/2 * visual_map.ratio,my_character.width * visual_map.ratio,my_character.height * visual_map.ratio);
+	}
+	else if(my_character.sensX == -1 && my_character.sensY == 0){
+		my_character.setHitbox((-my_character.width/2-my_character.width) * visual_map.ratio,-my_character.height/2 * visual_map.ratio,my_character.width * visual_map.ratio,my_character.height * visual_map.ratio);
+	}
+	else if(my_character.sensX == 0 && my_character.sensY == 1){
+		my_character.setHitbox(-my_character.width/2 * visual_map.ratio,my_character.height/2 * visual_map.ratio,my_character.width * visual_map.ratio,my_character.height * visual_map.ratio);
+	}
+	else if(my_character.sensX == -0 && my_character.sensY == -1){
+		my_character.setHitbox(-my_character.width/2 * visual_map.ratio,(-my_character.height/2-my_character.height) * visual_map.ratio,my_character.width * visual_map.ratio,my_character.height * visual_map.ratio);
+	}
+	else if(my_character.sensX == 1 && my_character.sensY == 1){
+		my_character.setHitbox(my_character.width/2 * visual_map.ratio,my_character.height/2 * visual_map.ratio,my_character.width * visual_map.ratio,my_character.height * visual_map.ratio);
+	}
+	else if(my_character.sensX == -1 && my_character.sensY == -1){
+		my_character.setHitbox((-my_character.width/2-my_character.width) * visual_map.ratio,(-my_character.height/2-my_character.height) * visual_map.ratio,my_character.width * visual_map.ratio,my_character.height * visual_map.ratio);
+	}
+	else if(my_character.sensX == 1 && my_character.sensY == -1){
+		my_character.setHitbox(my_character.width/2 * visual_map.ratio,(-my_character.height/2-my_character.height) * visual_map.ratio,my_character.width * visual_map.ratio,my_character.height * visual_map.ratio);
+	}
+	else if(my_character.sensX == -1 && my_character.sensY == 1){
+		my_character.setHitbox((-my_character.width/2-my_character.width) * visual_map.ratio,my_character.height/2 * visual_map.ratio,my_character.width * visual_map.ratio,my_character.height * visual_map.ratio);
+	}
+	
+	
+	if(my_character.attack.hitting == true){
+		
+		my_character.start_frame = my_character.animation.attack[0];
+		my_character.max_frame = my_character.animation.attack[1];
+		my_character.attack.state += 1;
+	/*
+		if( (bot.x + bot.hitbox[0] <= my_character.x + my_character.attack.hitbox[2] + my_character.attack.hitbox[0]) && (bot.x + bot.hitbox[2] >= my_character.x + my_character.attack.hitbox[0]) && (bot.y + bot.hitbox[1] <= my_character.y + my_character.attack.hitbox[3] + my_character.attack.hitbox[1]) && (bot.y + bot.hitbox[3] >= my_character.y + my_character.attack.hitbox[1]) && my_character.attack.hitting == true){
+			if(my_character.attack.hit == false){
+				bot.life -= 1;
+				my_character.attack.hit = true;
+			}
+		}
+	*/
+		if (my_character.attack.state > my_character.attack.length){
+			my_character.attack.hitting = false;
+			my_character.attack.hit = false;
+			my_character.attack.state = 0;
+		}
+	}
+	
+	
 }
 
 
@@ -286,14 +341,20 @@ function create_path(limitL,limitH){
 	my_character.eq_y = (path.currenty*5) + 1;
 	context.translate( 0 , -visual_map.scrolled_y)
 	while(path.currentx < limitL/5){
-		getSens(limitH); // appel à la fonction getSens(), qui décide les possibilités de chemin
+		path.going = getSens(limitH); // appel à la fonction getSens(), qui décide les possibilités de chemin
 		for(i=path.currentx*5; i<path.currentx*5+5; i++){
 			for(j=path.currenty*5; j<path.currenty*5+5; j++){
 				virtual_map[i][j].space = path_temp[path.coming][path.going].map[i-(path.currentx*5)][j-(path.currenty*5)];
 				virtual_map[i][j].material = virtual_map[i][j].space;
 			}
 		}
-		lol = get_random(3);
+		if(bot.state == false){
+			bot.eq_x = path.currentx*5 + 3;
+			bot.eq_y = path.currenty*5 + 3;
+			bot.ab_x = (path.currentx*5 + 3) *visual_map.ratio;
+			bot.ab_y = (path.currenty*5 + 3) *visual_map.ratio;
+			bot.state = true;
+		}
 		path.currentx += path_temp[path.coming][path.going].horizontal;
 		path.currenty = Math.max(Math.min((path.currenty + path_temp[path.coming][path.going].vertical),((limitH-5)/5)),0);
 		path.coming = path_temp[path.coming][path.going].exit;
@@ -328,6 +389,27 @@ Fonction qui donne les possibilités de chemin
 ====================================
 */
 function getSens(limitH){
+	if( path.currenty > 0 && path.currenty < (limitH-5)/5 ){
+		path.going = sens_dispo[path.coming][get_random(3)];
+		return path.going;
+	}
+	else{
+		if(path.coming == 1 || path.coming == 2){
+			path.going = 0;
+			return path.going;
+		}
+		else if(path.coming == 0 && path.currenty == 0){
+			path.going = get_random(2);
+			return path.going;
+		}
+		else if(path.coming == 0 && path.currenty >= (limitH-5)/5 ){
+			path.going = sens_dispo[3][get_random(2)];
+			return path.going;
+		}
+	}
+	
+
+/*
 	if(path.currenty >= (limitH-5)/5 && path.coming == 1){
 		path.going = sens_when_down[0];
 	}
@@ -343,8 +425,8 @@ function getSens(limitH){
 	if(path.currentx == 0 && path.currenty == 0){
 		path.going = 0;
 	}
+*/
 }
-
 
 /* 
 ====================================
@@ -354,7 +436,7 @@ Fonction qui affiche la carte, et scroll si besoin est
 */
 function scroll_map(){
 	visual_map.eq_x = Math.min( Math.max( my_character.eq_x - visual_map.width/2 , 0 ) , map_utilities.limit_x - visual_map.width);
-	visual_map.eq_y = Math.min( Math.max( my_character.eq_y - visual_map.height/2 , 0 ) , map_utilities.limit_y - visual_map.height + 2);
+	visual_map.eq_y = Math.min( Math.max( my_character.eq_y - visual_map.height/2 , 0 ) , map_utilities.limit_y - visual_map.height);
 	
 	if(my_character.eq_x >= visual_map.width/2 && my_character.eq_x <= map_utilities.limit_x - visual_map.width/2 - 1){
 		visual_map.x = my_character.x
@@ -362,7 +444,7 @@ function scroll_map(){
 	else{
 		visual_map.x = 0;
 	}
-	if(my_character.eq_y >= visual_map.height/2 && my_character.eq_y <= map_utilities.limit_y - visual_map.height/2 + 1){
+	if(my_character.eq_y >= visual_map.height/2 && my_character.eq_y <= map_utilities.limit_y - visual_map.height/2 - 1){
 		visual_map.y = my_character.y
 	}
 	else{
@@ -393,8 +475,23 @@ AFFICHAGE DU PERSONNAGE
 Fonction qui affiche le personnage
 ====================================
 */
-function display_character(){
-	context.drawImage( my_character.sprite , 30 * my_character.frame, 60 * my_character.sens , 30 , 60 , my_character.eq_x*visual_map.ratio + my_character.x - my_character.width/2 * visual_map.ratio, my_character.eq_y * visual_map.ratio + my_character.y - my_character.height/2 * visual_map.ratio, my_character.width * visual_map.ratio , my_character.height * visual_map.ratio);
+function displayElements(){
+	drawHitbox();
+	my_character.displayCharacter();
+	if(my_character.attack.hitting == true){
+		my_character.striking();
+	}
+}
+
+function drawHitbox(){
+	context.beginPath();
+	context.fillStyle = "green";
+	context.fillRect( my_character.eq_x * visual_map.ratio + my_character.x + my_character.attack.hitbox[0] , my_character.eq_y * visual_map.ratio + my_character.y  + my_character.attack.hitbox[1] , my_character.attack.hitbox[2] , my_character.attack.hitbox[3])
+	context.closePath();
+	context.beginPath();
+	context.fillStyle = "blue";
+	context.fillRect( my_character.eq_x * visual_map.ratio + my_character.x + my_character.hitbox[0] , my_character.eq_y * visual_map.ratio + my_character.y  + my_character.hitbox[1] , my_character.hitbox[2] , my_character.hitbox[3])
+	context.closePath();
 }
 
 
@@ -420,6 +517,9 @@ function keyDown(e){
 	controller.right = 1;
 	controller.left = 0;
 	}
+	if (code == 88){
+		controller.attack = 1;
+	}
 }
 
 function keyUp(e){
@@ -436,6 +536,9 @@ function keyUp(e){
 	if (code == 39){
 	controller.right = 0;
 	}
+	if (code == 88){
+		controller.attack = 0;
+	}
 }
 
 
@@ -446,7 +549,6 @@ Fonction qui affiche les informations du personnage
 ====================================
 */
 function show_info(){
-	$(".gold").html(my_character.inventaire.gold);
 }
 
 
@@ -477,4 +579,21 @@ function slowDownY()
     my_character.current_speed_y -= 1;
   if (my_character.current_speed_y < 0)
     my_character.current_speed_y += 1;
+}
+
+
+function pause(){
+	clearInterval(GameHeart);
+}
+function unPause(){
+	GameHeart = setInterval(function(){engine()},1000/60);
+}
+
+function openInventory(){
+	$("#pause").stop(true,true);
+	$("#pause").fadeIn(500);
+	pause();
+}
+function closeInventory(){
+	$("#pause").fadeOut(500,function(){unPause()});
 }
